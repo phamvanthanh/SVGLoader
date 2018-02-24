@@ -19,8 +19,9 @@ public class TestSVGColor extends Application {
         SVGColor svgColor = new SVGColor();
         Pane pane = new Pane();
 
-        Color c = svgColor.svgColor("red", 0.5);
+        Color c = svgColor.svgColor("red");
         System.out.println(c);
+        
         Circle circle = new Circle(100, c);
         
         circle.setLayoutX(100);
