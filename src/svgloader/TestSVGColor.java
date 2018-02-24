@@ -18,8 +18,10 @@ public class TestSVGColor extends Application {
 
         SVGColor svgColor = new SVGColor();
         Pane pane = new Pane();
+        
+        svgColor.setOpacity(0.1);
 
-        Color c = svgColor.svgColor("red");
+        Color c = svgColor.svgColor("blue");
         System.out.println(c);
         
         Circle circle = new Circle(100, c);
@@ -31,6 +33,10 @@ public class TestSVGColor extends Application {
         stage.setScene(new Scene(pane, Color.ANTIQUEWHITE));
        stage.show();
     }
+	
+	public static void main(String[] args){
+	  Application.launch(args);
+	 }
 
 
 }

@@ -50,16 +50,9 @@ public class SVGColor {
     @return Color or null if string is invalid...
     */
     public Color svgColor(String color, double value) {
-    	value = value > 1? 1:(value < 0? 0:value);
-    	this.opacity = value;
-    	try {
-    		this.color = Color.web(color.toLowerCase(), this.opacity);    
-    		return this.color;    		
-		}
-		catch (NullPointerException|IllegalArgumentException e){
-			System.out.println("Color string is not valid");
-			e.printStackTrace();
-			return Color.BLACK;
-		}    	
+    	
+    	this.setOpacity(value);    	
+    	return this.svgColor(color);    		
+		   	
     }
 }
