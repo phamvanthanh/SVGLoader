@@ -19,10 +19,10 @@ public class TestSVGColor extends Application {
         SVGColor svgColor = new SVGColor();
         Pane pane = new Pane();
         
-        svgColor.setOpacity(0.1);
+        svgColor.setOpacity(1);
 
-        Color c = svgColor.svgColor("blue");
-        System.out.println(c);
+        Color c = svgColor.svgColor("#bcbcbc");
+//        System.out.println(c);
         
         Circle circle = new Circle(100, c);
         
