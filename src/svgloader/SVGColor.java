@@ -9,7 +9,7 @@ public class SVGColor {
 	private Color color;
 	private double opacity = 1;
     public SVGColor( ) {
-    	
+
     }
     /**
     setOpacity sets generally the converted color to this Opacity setting
@@ -25,7 +25,7 @@ public class SVGColor {
     */
     public double getOpacity( ) {
 		return this.opacity;
-    	
+
     }
     /**
     svgColor converts a string to JavaFX color object
@@ -52,14 +52,6 @@ public class SVGColor {
     public Color svgColor(String color, double value) {
     	value = value > 1? 1:(value < 0? 0:value);
     	this.opacity = value;
-    	try {
-    		this.color = Color.web(color.toLowerCase(), this.opacity);    
-    		return this.color;    		
-		}
-		catch (NullPointerException|IllegalArgumentException e){
-			System.out.println("Color string is not valid");
-			e.printStackTrace();
-			return Color.BLACK;
-		}    	
+			return svgColor(color);   	
     }
 }
