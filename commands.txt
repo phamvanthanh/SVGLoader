@@ -1,0 +1,5 @@
+javac -d target  -sourcepath  src src/svgloader/TestSVGColor.java
+
+cd target
+
+java svgloader.TestSVGColor
