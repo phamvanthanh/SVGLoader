@@ -9,7 +9,7 @@ public class SVGColor {
 	private Color color;
 	private double opacity = 1;
     public SVGColor( ) {
-    	
+
     }
     /**
     setOpacity sets generally the converted color to this Opacity setting
@@ -25,7 +25,7 @@ public class SVGColor {
     */
     public double getOpacity( ) {
 		return this.opacity;
-    	
+
     }
     /**
     svgColor converts a string to JavaFX color object
@@ -50,6 +50,7 @@ public class SVGColor {
     @return Color or null if string is invalid...
     */
     public Color svgColor(String color, double value) {
+<<<<<<< HEAD
     	
     	this.setOpacity(value);    	
     	return this.svgColor(color);    		
