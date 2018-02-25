@@ -50,8 +50,6 @@ public class SVGColor {
     @return Color or null if string is invalid...
     */
     public Color svgColor(String color, double value) {
-<<<<<<< HEAD
-    	
     	this.setOpacity(value);    	
     	return this.svgColor(color);    		
 		   	
