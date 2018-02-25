@@ -15,14 +15,14 @@ public class SVGColor {
     */
     public void setOpacity(double value) {
     	value = value > 1? 1:(value < 0? 0:value);
-    	this.opacity = value;
+    	opacity = value;
     }
     /*
     getOpacity returns the Opacity setting
     @return double the setting opacity grad between 0.0 ... 1.0 (None...Full Transparent)
     */
     public double getOpacity( ) {
-		return this.opacity;
+		return opacity;
     	
     }
     /**
@@ -41,7 +41,7 @@ public class SVGColor {
     */
     public Color svgColor(String color, double value) {
     	
-    	this.setOpacity(value);    	
+    	  	
     	try {
 			color = color.toLowerCase();
 			if(color.equals("none"))
