@@ -6,8 +6,6 @@ public class SVGColor {
     /**
     * Constructor
     */
-	private Color color;
-	private double opacity = 1;
     public SVGColor( ) {
     	
     }
@@ -33,15 +31,7 @@ public class SVGColor {
     @return Color or null if string is invalid...
     */
     public Color svgColor(String color) {
-		try {
-			this.color = Color.web(color.toLowerCase(), this.opacity);
-			return this.color;
-		}
-		catch (NullPointerException|IllegalArgumentException e){
-			System.out.println("Input color string is not valid");
-			e.printStackTrace();
-			return Color.BLACK;
-		}
+		return svgColor(color, opacity);
     }
     /**
     svgColor converts a string to JavaFX color object
@@ -52,7 +42,15 @@ public class SVGColor {
     public Color svgColor(String color, double value) {
     	
     	this.setOpacity(value);    	
-    	return this.svgColor(color);    		
+    	try {
+			color = color.toLowerCase();
+			if(color.equals("none"))
+				return null;
+			return Color.web(color, opacity);			
+		}
+		catch (Exception e){} 
+    	return null;
 		   	
     }
+	private double opacity = 1;
 }
