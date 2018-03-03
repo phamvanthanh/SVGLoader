@@ -46,6 +46,7 @@ public class SVGColor {
 			color = color.toLowerCase();
 			if(color.equals("none"))
 				return null;
+			setOpacity(value);
 			return Color.web(color, opacity);			
 		}
 		catch (Exception e){} 

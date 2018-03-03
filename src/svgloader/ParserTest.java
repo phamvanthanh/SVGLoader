@@ -20,5 +20,6 @@ public class ParserTest {
 		"\nkey cy:"+parser.getString(svg, "cy")+
 		"\nkey height:"+parser.getString(svg, "height")+
 		"\nkey stroke:"+parser.getColor(svg, "stroke").toString());
+		fis.close();
 	}
 }

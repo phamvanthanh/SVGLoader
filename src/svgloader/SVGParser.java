@@ -1,10 +1,19 @@
 package svgloader;
 
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.zip.GZIPInputStream;
+
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Shape;
 
 //
 public class SVGParser {
+	private static final int DEFAULT_ATTR_GROUP=2,
+							CSS_ATTR_GROUP=4;
+	private String fileContent;//TODO: find a specific use
 	/**
 	Constructor
 	@param svgName String
@@ -12,6 +21,20 @@ public class SVGParser {
 	not contain any block starting with <svg and ending with </svg>
 	*/
 	public SVGParser(String svgName) throws Exception {
+		if(!(svgName.endsWith(".svg")||svgName.endsWith(".svgz")))
+			throw new Exception();
+		byte[] buf = null;
+		int length = 0;
+		InputStream inFile=null;
+		if(svgName.endsWith(".svg"))
+			inFile = new FileInputStream(svgName);
+		else if(svgName.endsWith(".svgz"))
+			inFile = new GZIPInputStream( new FileInputStream(svgName));
+		
+
+		buf = new byte[inFile.available()];
+		length = inFile.read(buf);
+		fileContent = new String(buf, 0, length);
 		
 	}
 	/**
@@ -49,6 +72,21 @@ public class SVGParser {
 	*/
 	public double getValue(String s, String key) {
 		return 0;
+	}
+	
+	private String getAttribute(String s,String key){
+		Pattern p= Pattern.compile("<[\\w\\W]+\\b[("+key+"=\"([\\w\\W]*)\")|(style=\"\\b"+key+":([\\w-]*)\")][\\w\\W]*?>");
+		Matcher m=p.matcher(s);
+		if(m.find()){
+			return (m.group(DEFAULT_ATTR_GROUP)!=null)? m.group(DEFAULT_ATTR_GROUP)
+					:((m.group(CSS_ATTR_GROUP)!=null)? m.group(CSS_ATTR_GROUP):null);
+		}
+		return null;
+	}
+	
+	private String getTag(String s, String key){
+		//Pattern p=Pattern.compile("<"+key+"\\b[\\w\\W]*>[\\w\\W]*</"+key+">");
+		int openTag=0;
 		
 	}
 	/**
@@ -58,7 +96,8 @@ public class SVGParser {
 	@return String the content of the given key
 	*/
 	public String getString(String s, String key) {
-		return key;
+		
+		return null;
 		
 	}
 	/**
@@ -67,7 +106,11 @@ public class SVGParser {
 	@param key String the designated key (e.g. key fill -> <rect...fill="blue".../>)
 	@return Color JavaFX color of the given key
 	*/
-	public Color getColor(String s, String key) {
+	public Color getColor(String s, String key) {String color = getString(s, key);
+	if (color != null) {
+		double op = opacityValue(s, "fill-opacity");
+		return new SVGColor().svgColor(color, op); // our SVGColor API
+		}
 		return null;		
 	}
 	/**
@@ -76,7 +119,7 @@ public class SVGParser {
 	@param key String the designated key (e.g. key fill-opacity -> <rect...fill-opacity="0.5".../>)
 	@return double opacity value of JavaFX color of the given key*/
 	public double opacityValue(String s, String key) {
-		return 0;
+		return getValue(s,key);
 		
 	}
 	
