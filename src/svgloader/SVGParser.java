@@ -27,7 +27,7 @@ public class SVGParser {
 	@exception Java generic Exception if suffix is neither .svg, nor .svgz or the content does
 	not contain any block starting with <svg and ending with </svg>
 	*/
-	private String fileContent;
+	
 	public SVGParser(String svgName) throws Exception {
 		byte[] buf = null;
 		int length = 0;
@@ -46,15 +46,14 @@ public class SVGParser {
 		
 		fileContent = new String(buf, 0, length);
 	
-
 	}
 	
 	//Thanh added for test
 	public List<Shape> getSceneObjects() {
 		long start = System.currentTimeMillis();
-     		List<String> list = getSvgObjectWithRegex(fileContent); 
+     	List<String> list = getSvgObjectWithRegex(fileContent); 
 		long end = System.currentTimeMillis();
-//		System.out.println(list);
+		System.out.println(list);
 		System.out.println("List build time: "+(end - start));
 		List<Shape> shapeList = new ArrayList<Shape>();
 		
@@ -76,10 +75,8 @@ public class SVGParser {
 		Shape sh = null;
 	
 		if(s.indexOf("<rect") > -1) {
-			sh = new Rectangle();
-			
-			shape(sh, s);
-			System.out.print(sh);
+			sh = new Rectangle();			
+			shape(sh, s);			
 		}
 		if(s.indexOf("<circle") > -1) {
 			sh = new Circle();
@@ -152,24 +149,25 @@ public class SVGParser {
 			((Polygon)S).getPoints().addAll(doubleArray(getString(s, "points")));					
 		}
 		
-		if(S instanceof SVGPath) {				
-			((SVGPath)S).setContent(getString(s, "d"));					
-		}
-		//STYLE CODE FOR SHAPES
-		S.setStroke(getColor(s, "stroke"));
+		if(S instanceof SVGPath) {	
 	
-//		S.setStrokeWidth(getValue(s, "stroke-width"));		
+			((SVGPath)S).setContent(svgPathContent(s));					
+		}
 		
+	
 		if(S instanceof Text) {				
 			((Text)S).setText(getString(s, "text"));
 			((Text)S).setX(getValue(s, "x"));
 			((Text)S).setY(getValue(s, "y"));
 			
 		}
-		
+		//STYLE CODE FOR SHAPES
+		S.setStroke(getColor(s, "stroke"));
 		S.setFill(getColor(s, "fill"));
 		
-		
+		//TRANSFORMATION CODES
+		//FILL-RULE CODES
+				
 	}
 	/**
 	search and parse double array for Polyline and Polygon
@@ -289,27 +287,26 @@ public class SVGParser {
 	@return String the path content extracted from d="..........."
 	*/
 	public String svgPathContent(String s) {
-		return getString(s, "d");	
-		
-		//DO WE NEED THIS?
+		return getString(s, " d");	
+	
 	}	
 	
-	
-	
+	//Thanh added function
 	protected List<String> getSvgObjectWithRegex(String s) {
 		List<String> obList = new ArrayList<String>();
 	
 		String key = "((rect)|(circle)|(path)|(text)|(ellipse)|(line)|(polyline)|(polygon)|(ellipse)|(circle)(text))";
 		Pattern O_REGEX = Pattern.compile("(<("+key+")[^<(/>)>]*>[^<>]*?(<\\2[^<>]*>.*?</\\2>)*[^<>]*?(</\\2>))|(<"+key+"[^<>]*/>)");
 		Matcher matcher = O_REGEX.matcher(s);	
-		long start  = System.currentTimeMillis();
+	
 		while (matcher.find()) {
 			obList.add(matcher.group(0));
 	    }
-		long end = System.currentTimeMillis();
-		System.out.println("Find time: " + (end - start));
+			
 		return obList;
 	}
+	
+	private String fileContent;
 	
 		
 }
