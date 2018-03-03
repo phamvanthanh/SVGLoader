@@ -15,7 +15,9 @@ import javafx.scene.shape.Line;
 import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Polyline;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.SVGPath;
 import javafx.scene.shape.Shape;
+import javafx.scene.text.Text;
 
 //
 public class SVGParser {
@@ -25,6 +27,7 @@ public class SVGParser {
 	@exception Java generic Exception if suffix is neither .svg, nor .svgz or the content does
 	not contain any block starting with <svg and ending with </svg>
 	*/
+	private String fileContent;
 	public SVGParser(String svgName) throws Exception {
 		byte[] buf = null;
 		int length = 0;
@@ -41,14 +44,70 @@ public class SVGParser {
 			length = inFile.read(buf);
 		}
 		
-		String svgContent = new String(buf, 0, length);
-		/*
+		fileContent = new String(buf, 0, length);
+	
+
+	}
+	
+	//Thanh added for test
+	public List<Shape> getSceneObjects() {
+		long start = System.currentTimeMillis();
+     		List<String> list = getSvgObjectWithRegex(fileContent); 
+		long end = System.currentTimeMillis();
+//		System.out.println(list);
+		System.out.println("List build time: "+(end - start));
+		List<Shape> shapeList = new ArrayList<Shape>();
+		
 		long start1 = System.currentTimeMillis();
-			List<String> list1 = getSvgObjectWithRegex(svgContent);
+		for(String s: list) {
+			
+			Shape sh = buildShape(s);
+			if(sh !=null)
+				shapeList.add(sh);
+		}
 		long end1 = System.currentTimeMillis();
-		long time1 = end1-start1;
-		*/
-     	List<String> list1 = getSvgObjectWithRegex(svgContent); 
+		System.out.println("Objects build time: "+(end1 - start1));
+		
+		return shapeList;
+		
+	}
+	//Thanh added for test
+	public Shape buildShape(String s) {
+		Shape sh = null;
+	
+		if(s.indexOf("<rect") > -1) {
+			sh = new Rectangle();
+			
+			shape(sh, s);
+			System.out.print(sh);
+		}
+		if(s.indexOf("<circle") > -1) {
+			sh = new Circle();
+			shape(sh, s);
+		}
+		if(s.indexOf("<line") > -1) {
+			sh = new Rectangle();
+			shape(sh, s);
+		}
+		if(s.indexOf("<polyline") > -1) {
+			sh = new Polyline();
+			shape(sh, s);
+		}
+		if(s.indexOf("<polygon") > -1) {
+			sh = new Polygon();
+			shape(sh, s);
+		}
+	
+		if(s.indexOf("<path") > -1) {
+			
+			sh = new SVGPath();
+			shape(sh, s);
+		}
+		if(s.indexOf("<text") > -1) {			
+			sh = new Text();
+			shape(sh, s);
+		}
+		return sh;
 		
 	}
 	/**
@@ -59,9 +118,9 @@ public class SVGParser {
 	public void shape(Shape S, String s) {
 		if(S instanceof Rectangle) {
 			((Rectangle)S).setX(getValue(s, "x"));
-			((Rectangle)S).setY(getValue(s, "Y"));
-			((Rectangle)S).setWidth(getValue(s, "width"));
-			((Rectangle)S).setWidth(getValue(s, "height"));			
+			((Rectangle)S).setY(getValue(s, "y"));
+			((Rectangle)S).setWidth(getValue(s, "width"));		
+			((Rectangle)S).setHeight(getValue(s, "height"));			
 		}
 		
 		if(S instanceof Circle) {
@@ -84,24 +143,33 @@ public class SVGParser {
 			((Line)S).setEndX(getValue(s, "x2"));
 			((Line)S).setEndY(getValue(s, "y1"));				
 		}
-		
-		if(S instanceof Line) {			
-			((Line)S).setStartX(getValue(s, "x1"));
-			((Line)S).setStartY(getValue(s, "y1"));
-			((Line)S).setEndX(getValue(s, "x2"));
-			((Line)S).setEndY(getValue(s, "y1"));				
-		}
-		
+				
 		if(S instanceof Polyline) {				
 			((Polyline)S).getPoints().addAll(doubleArray(getString(s, "points")));					
 		}
 		
 		if(S instanceof Polygon) {				
-			((Polygon)S).getPoints().addAll(doubleArray(getString(s, "points")));
-					
+			((Polygon)S).getPoints().addAll(doubleArray(getString(s, "points")));					
 		}
 		
-		//STYLE CODE
+		if(S instanceof SVGPath) {				
+			((SVGPath)S).setContent(getString(s, "d"));					
+		}
+		//STYLE CODE FOR SHAPES
+		S.setStroke(getColor(s, "stroke"));
+	
+//		S.setStrokeWidth(getValue(s, "stroke-width"));		
+		
+		if(S instanceof Text) {				
+			((Text)S).setText(getString(s, "text"));
+			((Text)S).setX(getValue(s, "x"));
+			((Text)S).setY(getValue(s, "y"));
+			
+		}
+		
+		S.setFill(getColor(s, "fill"));
+		
+		
 	}
 	/**
 	search and parse double array for Polyline and Polygon
@@ -153,8 +221,9 @@ public class SVGParser {
 	public String getString(String s, String key) {
 
 		int index = key.length();
-		if(key == "svg") {			
-			return "";
+		if(key == "text") {			
+			int tIndex = s.indexOf(">")+1;
+			return s.substring(tIndex, s.indexOf("<", tIndex));
 		}
 		if(s.indexOf("<"+key) > 0) {
 			index += s.indexOf("<"+key)+1;
@@ -164,8 +233,12 @@ public class SVGParser {
 			index += s.indexOf(key+"=\"")+2;
 			return s.substring(index, s.indexOf("\"", index));
 		}
-		else if(s.indexOf(key+":") > 0) {
+		else if(s.indexOf(key+":") > 0) { //CASE OF CSS FORMAT
+			if(s.indexOf("style")>0)
+				s = getString(s, "style")+";";
+			
 			index += s.indexOf(key+":")+1;
+		
 			return s.substring(index, s.indexOf(";", index));
 		}
 		return null;	
@@ -182,7 +255,7 @@ public class SVGParser {
 		
 		SVGColor svgColor = new SVGColor();
 		if (color != null) {
-			double op = opacityValue(s, key+"-fill");
+			double op = opacityValue(s, key+"-opacity");
 			return svgColor.svgColor(color, op); // SVGColor API
 		}
 		return null;
@@ -205,9 +278,8 @@ public class SVGParser {
 	@param key String the designated key (e.g. key rect -> <rect...fill-opacity="0.5".../>)
 	@return int the length of element-2-string
 	*/
-	public int svgObject(String[] S, String key, int pos) {
-		
-//	
+	public int svgObject(String[] S, String key) {
+
 		return 0;
 	}
 	
@@ -217,27 +289,27 @@ public class SVGParser {
 	@return String the path content extracted from d="..........."
 	*/
 	public String svgPathContent(String s) {
-		return getString(s, "d");		
+		return getString(s, "d");	
+		
+		//DO WE NEED THIS?
 	}	
 	
-
+	
 	
 	protected List<String> getSvgObjectWithRegex(String s) {
 		List<String> obList = new ArrayList<String>();
 	
-		String key = "((rect)|(circle)|(path)|(text)|(ellipse)|(line)|(polyline)|(polygon)|(ellipse)|(circle))";
+		String key = "((rect)|(circle)|(path)|(text)|(ellipse)|(line)|(polyline)|(polygon)|(ellipse)|(circle)(text))";
 		Pattern O_REGEX = Pattern.compile("(<("+key+")[^<(/>)>]*>[^<>]*?(<\\2[^<>]*>.*?</\\2>)*[^<>]*?(</\\2>))|(<"+key+"[^<>]*/>)");
 		Matcher matcher = O_REGEX.matcher(s);	
-		
+		long start  = System.currentTimeMillis();
 		while (matcher.find()) {
 			obList.add(matcher.group(0));
 	    }
+		long end = System.currentTimeMillis();
+		System.out.println("Find time: " + (end - start));
 		return obList;
 	}
 	
-	
-	
-	
-
-	
+		
 }

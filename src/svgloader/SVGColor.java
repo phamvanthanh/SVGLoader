@@ -44,9 +44,10 @@ public class SVGColor {
     	  	
     	try {
 			color = color.toLowerCase();
-			if(color.equals("none"))
+			String s = color.trim();
+			if(s.equals("none"))
 				return null;
-			return Color.web(color, opacity);			
+			return Color.web(s, opacity);			
 		}
 		catch (Exception e){} 
     	return null;
