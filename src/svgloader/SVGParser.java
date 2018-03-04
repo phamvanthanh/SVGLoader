@@ -2,6 +2,7 @@ package svgloader;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
@@ -60,7 +61,12 @@ public class SVGParser {
 	@return double array with Viewbox 4 elements (x, y, width, height)
 	*/
 	public double[] viewBoxData(String s) {
-		return null;
+		String[] values=getString(s,"viewBox").split("\\s");
+		double[] array=new double[values.length];
+		for(int i=0;i<values.length;++i){
+			array[i]=Double.parseDouble(values[i]);
+		}
+		return array;
 		
 	}
 	/**
@@ -71,11 +77,10 @@ public class SVGParser {
 	@return double the value of the given key
 	*/
 	public double getValue(String s, String key) {
-		try{
-			return Double.parseDouble(getString(s,key));
-		}catch(Exception e){
-			return 0;
-		}
+		String value=getString(s,key);
+		if(value.endsWith("cm"))
+			return Double.parseDouble(value.substring(0,value.length()-2))*38.5;//Change to pixel
+		return Double.parseDouble(value)*0.385;
 	}
 	
 	private String getAttribute(String s,String key){//TODO: is case sensitive?
@@ -124,7 +129,7 @@ public class SVGParser {
 	@param key String the designated key (e.g. key rect -> <rect .... .../>)
 	@return String the content of the given key
 	*/
-	public String getString(String s, String key) {//TODO use regex
+	public String getString(String s, String key) {
 		int firstIndex=s.indexOf("<"+key);
 		if(firstIndex!=-1)
 			return getTag(s,key);
@@ -140,8 +145,7 @@ public class SVGParser {
 	public Color getColor(String s, String key) {
 		String color = getString(s, key);
 		if (color != null) {
-			double op = opacityValue(s, "fill-opacity");
-			return new SVGColor().svgColor(color, op); // our SVGColor API
+			return new SVGColor().svgColor(color); 
 		}
 		return null;		
 	}
