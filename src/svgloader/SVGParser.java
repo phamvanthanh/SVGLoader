@@ -71,11 +71,16 @@ public class SVGParser {
 	@return double the value of the given key
 	*/
 	public double getValue(String s, String key) {
-		return 0;
+		try{
+			return Double.parseDouble(getString(s,key));
+		}catch(Exception e){
+			return 0;
+		}
 	}
 	
-	private String getAttribute(String s,String key){
-		Pattern p= Pattern.compile("<[\\w\\W]+\\b[("+key+"=\"([\\w\\W]*)\")|(style=\"\\b"+key+":([\\w-]*)\")][\\w\\W]*?>");
+	private String getAttribute(String s,String key){//TODO: is case sensitive?
+		Pattern p= Pattern.compile("(\\b"+key+"=\"([^\"]*)\")|(style=\"[\\w\\W]*"
+									+key+":([\\S^;]*)\\b[\\w\\W])");
 		Matcher m=p.matcher(s);
 		if(m.find()){
 			return (m.group(DEFAULT_ATTR_GROUP)!=null)? m.group(DEFAULT_ATTR_GROUP)
@@ -84,10 +89,34 @@ public class SVGParser {
 		return null;
 	}
 	
-	private String getTag(String s, String key){
-		//Pattern p=Pattern.compile("<"+key+"\\b[\\w\\W]*>[\\w\\W]*</"+key+">");
-		int openTag=0;
-		
+	private String getTag(String s, String key){//TODO: is case sensitive?
+		int openingTag=0
+			,beginIndex=-1
+			,endIndex=-1
+			,index=0;
+		while(true){
+			index=s.indexOf(key,index);
+			if(index==-1)
+				break;
+			if(s.charAt(index-1)=='<'){//if it is a begin tag
+				if(openingTag==0){//self-closing tag
+					int endOfTag=s.indexOf('>',index);
+					if(s.charAt(endOfTag-1)=='/')
+						return s.substring(index-1,endOfTag+1);
+					else
+						beginIndex=index-1;
+				}
+				openingTag++;
+			}else if(s.substring(index-2, index+key.length()+1).equals("</"+key+">")){//if it is a close tag
+				openingTag--;
+				if(openingTag==0){
+					endIndex=index+key.length()+1;
+					break;
+				}
+			}
+			index++;
+		}
+		return (beginIndex!=-1 && endIndex!=-1)?s.substring(beginIndex, endIndex):null;
 	}
 	/**
 	search and parse a string of the given key
@@ -95,10 +124,12 @@ public class SVGParser {
 	@param key String the designated key (e.g. key rect -> <rect .... .../>)
 	@return String the content of the given key
 	*/
-	public String getString(String s, String key) {
-		
-		return null;
-		
+	public String getString(String s, String key) {//TODO use regex
+		int firstIndex=s.indexOf("<"+key);
+		if(firstIndex!=-1)
+			return getTag(s,key);
+		else
+			return getAttribute(s,key);
 	}
 	/**
 	search and parse the color of the given key
@@ -106,10 +137,11 @@ public class SVGParser {
 	@param key String the designated key (e.g. key fill -> <rect...fill="blue".../>)
 	@return Color JavaFX color of the given key
 	*/
-	public Color getColor(String s, String key) {String color = getString(s, key);
-	if (color != null) {
-		double op = opacityValue(s, "fill-opacity");
-		return new SVGColor().svgColor(color, op); // our SVGColor API
+	public Color getColor(String s, String key) {
+		String color = getString(s, key);
+		if (color != null) {
+			double op = opacityValue(s, "fill-opacity");
+			return new SVGColor().svgColor(color, op); // our SVGColor API
 		}
 		return null;		
 	}
@@ -131,8 +163,8 @@ public class SVGParser {
 	@return int the length of element-2-string
 	*/
 	public int svgObject(String[] S, String key) {
-		return 0;
-		
+		S[1]=getString(S[0],key);
+		return S[1].length();
 	}
 	
 	/**
@@ -141,7 +173,7 @@ public class SVGParser {
 	@return String the path content extracted from d="..........."
 	*/
 	public String svgPathContent(String s) {
-		return null;
+		return getString(s,"d");
 		
 	}
 }

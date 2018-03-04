@@ -5,15 +5,19 @@ import java.io.FileInputStream;
 
 public class ParserTest {
 	public static void main(String... args) throws Exception {
+		/*
 		if (args.length == 0) {
 			System.out.println("Usage: java ParserTest anySVGfule");
 			System.exit(0);
 		}
-		FileInputStream fis = new FileInputStream(args[0]);
+		*/
+		String filePath="D:\\myProjects\\Team Project\\SVGLoader\\src\\svgloader\\test.svg";
+		FileInputStream fis = new FileInputStream(filePath);
 		byte[] rec = new byte[fis.available()];
 		int n = fis.read(rec);String svg = new String(rec, 0, n);
+		System.out.println(svg);
 		
-		SVGParser parser = new SVGParser(svg);
+		SVGParser parser = new SVGParser(filePath);
 		
 		System.out.println("key svg:"+parser.getString(svg, "svg")+
 		"\nkey circle:"+parser.getString(svg, "circle")+
