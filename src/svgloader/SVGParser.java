@@ -1,6 +1,7 @@
 package svgloader;
 
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -29,23 +30,30 @@ public class SVGParser {
 	*/
 	
 	public SVGParser(String svgName) throws Exception {
-		byte[] buf = null;
-		int length = 0;
 		
-		if(svgName.endsWith(".svg")) {
-			FileInputStream inFile = new FileInputStream(svgName);
-			buf = new byte[inFile.available()];
-			length = inFile.read(buf);
-			
-		}
-		else if(svgName.endsWith(".svgz")){
-			GZIPInputStream inFile = new GZIPInputStream( new FileInputStream(svgName));
-			buf = new byte[inFile.available()];
-			length = inFile.read(buf);
-		}
-		
-		fileContent = new String(buf, 0, length);
-	
+			  if(!(svgName.endsWith(".svg")||svgName.endsWith(".svgz")))
+				  throw new Exception();
+			  byte[] buf = null;
+			  int length = 0;			  
+			  InputStream inFile=null;
+			  
+			  if(svgName.endsWith(".svg"))
+				  inFile = new FileInputStream(svgName);
+			  
+			  else if(svgName.endsWith(".svgz"))
+				  inFile = new GZIPInputStream( new FileInputStream(svgName));
+			  
+			  buf = new byte[inFile.available()];
+			  length = inFile.read(buf);
+			  
+			  fileContent = new String(buf, 0, length);
+			  String[] S = {fileContent, ""};
+			  
+			  svgObject(S, "svg");
+			  
+			  
+			  System.out.println(S[1]);
+			  
 	}
 	
 	//Thanh added for test
@@ -53,7 +61,7 @@ public class SVGParser {
 		long start = System.currentTimeMillis();
      	List<String> list = getSvgObjectWithRegex(fileContent); 
 		long end = System.currentTimeMillis();
-		System.out.println(list);
+	
 		System.out.println("List build time: "+(end - start));
 		List<Shape> shapeList = new ArrayList<Shape>();
 		
@@ -70,6 +78,7 @@ public class SVGParser {
 		return shapeList;
 		
 	}
+	
 	//Thanh added for test
 	public Shape buildShape(String s) {
 		Shape sh = null;
@@ -159,7 +168,7 @@ public class SVGParser {
 			((Text)S).setText(getString(s, "text"));
 			((Text)S).setX(getValue(s, "x"));
 			((Text)S).setY(getValue(s, "y"));
-			
+			//SET-FONT
 		}
 		//STYLE CODE FOR SHAPES
 		S.setStroke(getColor(s, "stroke"));
@@ -208,8 +217,6 @@ public class SVGParser {
 		return 0;		
 	}
 	
-
-
 	/**
 	search and parse a string of the given key
 	@param s String, the parsing string
@@ -277,9 +284,52 @@ public class SVGParser {
 	@return int the length of element-2-string
 	*/
 	public int svgObject(String[] S, String key) {
-
+		int start = S[0].indexOf("<"+key);	
+		int end = start;		
+		if(start > -1) {	
+			end = isSelfClose(S[0], start);
+			if(end<0) {															
+				int firstClose = S[0].indexOf("/"+key+">", end)+key.length()+2; 			
+				end = firstClose;
+				int oInd = start+key.length()+1;
+			
+				while(oInd < firstClose){
+					int open = S[0].indexOf("<"+key, oInd); 
+					
+					if(open > 0) {						
+						oInd = open+key.length()+1;
+						if(isSelfClose(S[0], oInd) > 0)
+							continue;
+						int close = S[0].indexOf("/"+key+">", end);
+						if(close > 0)
+							end = close+key.length()+2;
+					}
+					else
+						break;						
+				}				
+			}			
+		
+			String rt = S[0].substring(start, end);
+				   S[1]= rt;
+		    
+			return rt.length();
+			
+		}
 		return 0;
 	}
+	private int isSelfClose(String s, int index) {
+		int close = s.indexOf(">", index);		
+		
+		if(close > 0) {
+			if(s.indexOf("/>", index) == (close -1)) {
+				
+				return close+1;
+			}
+		}			
+		
+		return -1;
+	}
+	
 	
 	/**
 	search, parse and load the content of a path from the given string
@@ -294,19 +344,22 @@ public class SVGParser {
 	//Thanh added function
 	protected List<String> getSvgObjectWithRegex(String s) {
 		List<String> obList = new ArrayList<String>();
-	
-		String key = "((rect)|(circle)|(path)|(text)|(ellipse)|(line)|(polyline)|(polygon)|(ellipse)|(circle)(text))";
-		Pattern O_REGEX = Pattern.compile("(<("+key+")[^<(/>)>]*>[^<>]*?(<\\2[^<>]*>.*?</\\2>)*[^<>]*?(</\\2>))|(<"+key+"[^<>]*/>)");
-		Matcher matcher = O_REGEX.matcher(s);	
+		
+					
+		String key = "((rect)|(circle)|(ellipse)|(line)|(polyline)|(polygon)|(path)|(svg))";
+		Pattern O_REGEX = Pattern.compile("(<("+key+")[^<(/>)>]*>[^<>]*?(<\\2[^<>]*>([^<>]*?(\n))*[^<>]*?</\\2>)*[^<>]*?(</\\2>))|(<"+key+"[^<>]*/>)");
+//	   Pattern sd_REGEX = Pattern.compile("(<("+key+")[^<(/>)>]*>[^<>]*?(<\\2[^<>]*>(.*?(\n))*.*?</\\2>)*?[^<>]*?(</\\2>))|(<"+key+"[^<>]*/>)");
+	   
+	   Matcher matcher = O_REGEX.matcher(s);	
 	
 		while (matcher.find()) {
 			obList.add(matcher.group(0));
 	    }
-			
+//		System.out.println(obList);
 		return obList;
 	}
 	
-	private String fileContent;
 	
-		
+	
+	private String fileContent;			
 }
