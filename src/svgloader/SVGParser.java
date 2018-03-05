@@ -103,7 +103,7 @@ public class SVGParser {
 						 Shape sh = buildShape(S[1]);
 						 if(sh!= null) {					
 							g.getChildren().add(sh);
-							System.out.println(sh);
+						
 						 }
 					 }					 
 				 }	
@@ -424,7 +424,7 @@ public class SVGParser {
 		if(matcher.find()) {
 			String rs = matcher.group(0);
 			rs = rs.substring(rs.lastIndexOf("<")+1, rs.length()-1);
-			System.out.println(rs);
+			
 			return rs;
 		}
 			

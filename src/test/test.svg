@@ -15,6 +15,6 @@
 		</svg>
 	</svg>
 	<circle cx="10" cy="200" r="24" style="stroke:#006600; fill:red"/> 
-	
+	<path style=" stroke:none;fill-rule:evenodd;fill:rgb(0%,0%,0%);fill-opacity:1;" d="M 42.71875 47.160156 L 41.519531 45.960938 L 42.71875 772.441406 Z M 42.71875 47.160156 "/>
 	
 </svg>
