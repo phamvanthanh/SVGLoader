@@ -54,7 +54,6 @@ public class SVGParser {
 	public Group getObject() {
 		String[] S = {fileContent, ""};
 		svgObject(S, "svg", 0);
-//		System.out.println(S[1]);
 		return buildObject(S[0]);
 		
 	}
@@ -63,7 +62,6 @@ public class SVGParser {
 		Group g = new Group();
 		if(!content.isEmpty()) {
 			String key = "";
-
 			int index = 0,  strlen = 0, length = content.length();
 			String[] S = {content, ""};
 			
@@ -80,9 +78,9 @@ public class SVGParser {
 						index += strlen;	
 						double x = getValue(S[0], "x");
 						double y = getValue(S[0], "y");
-						
-						g.setTranslateX(x);
-						g.setTranslateY(y);
+//						
+//						g.setTranslateX(x);
+//						g.setTranslateY(y);
 						
 						String cont = getContent(S[1]);
 						if(!cont.isEmpty()) {
@@ -92,35 +90,30 @@ public class SVGParser {
 								g.getChildren().add(g1);
 						}											
 					}
-					continue; // 			
+					continue; 		
 						
 				}
 						
 				if(!key.equals("svg") && !key.isEmpty())
 				{
-
 					 strlen = svgObject(S, key, index);
 					 index += strlen;
 					 
 					 if(strlen > 0) {
 						 Shape sh = buildShape(S[1]);
 						 if(sh!= null) {					
-							g.getChildren().add(sh);							
+							g.getChildren().add(sh);
+							System.out.println(sh);
 						 }
-					 }
-
-					 
+					 }					 
 				 }	
 				 else {
 //					 System.out.printf("At break point Index: %d, Length: %d, S[0]: %s,\n S[1]: %s\n",index, length, S[0], S[1]);
 					 break; //IF NO MORE TAGS 
-				 }
-					
-				
+				 }			
 				
 			}
-			 return g;
-			
+			 return g;			
 		}
 		return null;
 			
@@ -219,6 +212,7 @@ public class SVGParser {
 		}
 		//STYLE CODE FOR SHAPES
 		S.setStroke(getColor(s, "stroke"));
+		System.out.printf("String: %s, Color: %s", s,  getColor(s, "fill"));
 		S.setFill(getColor(s, "fill"));
 		
 		//TRANSFORMATION CODES
@@ -271,19 +265,27 @@ public class SVGParser {
 	@return String the content of the given key
 	*/
 	public String getString(String s, String key) {
-
+		s = s.replaceAll("[\\t\\n\\r]+"," ");
 		int index = key.length();
-		if(s.indexOf(key+"=\"") > 0) {
-			index += s.indexOf(key+"=\"")+2;
+		if(s.indexOf(" "+key+"=\"") > 0) {
+			index += s.indexOf(" "+key+"=\"")+3;
 			return s.substring(index, s.indexOf("\"", index));
+
 		}
+		
 		else if(s.indexOf(key+":") > 0) { //CASE OF CSS FORMAT
 			if(s.indexOf("style")>0)
 				s = getString(s, "style")+";";
 			
-			index += s.indexOf(key+":")+1;
+			int ind = s.indexOf(key+":");
+			if(ind > 0) {
+				index +=ind + 1;
+				return s.substring(index, s.indexOf(";", index));
+			}				
+				
+			return "";
 		
-			return s.substring(index, s.indexOf(";", index));
+
 		}
 		
 		else if(key == "text") {			
@@ -359,9 +361,7 @@ public class SVGParser {
 						break;						
 				}				
 			}			
-					  
-				
-//		    System.out.printf("Start: %d, Close: %d, Length: %d, Key: %s\n", start, close, rst.length(), key);
+
 			rst = S[0].substring(start, close).trim();	
 			
 		}
@@ -388,14 +388,13 @@ public class SVGParser {
 	@return String the path content extracted from d="..........."
 	*/
 	public String svgPathContent(String s) {
-		return getString(s, " d");	
+		return getString(s, "d");	
 		
 	
 	}	
 	
 	public String getContent(String s) {
-		 return s.substring(s.indexOf(">")+1, s.lastIndexOf("<")-1).trim();
-		
+		 return s.substring(s.indexOf(">")+1, s.lastIndexOf("<")-1);		
 	}	
 	
 	//Thanh added function
@@ -419,12 +418,14 @@ public class SVGParser {
 		
 		String key = "((svg)|(rect)|(circle)|(ellipse)|(line)|(polyline)|(polygon)|(path))";
 		Pattern K_REGEX = Pattern.compile(".{"+index+"}(<"+key+" )", Pattern.DOTALL);
-//		System.out.println("K_REG: "+K_REGEX);
+
 		
 		Matcher matcher = K_REGEX.matcher(s);	
 		if(matcher.find()) {
 			String rs = matcher.group(0);
-			return rs.substring(rs.lastIndexOf("<")+1, rs.length()-1);
+			rs = rs.substring(rs.lastIndexOf("<")+1, rs.length()-1);
+			System.out.println(rs);
+			return rs;
 		}
 			
 		return "";
