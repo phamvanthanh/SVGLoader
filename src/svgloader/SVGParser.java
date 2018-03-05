@@ -13,6 +13,7 @@ import javafx.scene.Group;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Ellipse;
+import javafx.scene.shape.FillRule;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Polyline;
@@ -47,7 +48,8 @@ public class SVGParser {
 			  buf = new byte[inFile.available()];
 			  length = inFile.read(buf);
 			  
-			  fileContent = new String(buf, 0, length);
+			  fileContent = (new String(buf, 0, length)).replaceAll("[\\t\\n\\r]+"," ");
+			
 		
 	}
 	
@@ -76,18 +78,21 @@ public class SVGParser {
 		
 					if(strlen > 0) {
 						index += strlen;	
-						double x = getValue(S[0], "x");
-						double y = getValue(S[0], "y");
-//						
-//						g.setTranslateX(x);
-//						g.setTranslateY(y);
-						
+
 						String cont = getContent(S[1]);
 						if(!cont.isEmpty()) {
-
+						
 							Group g1 = buildObject(cont);
-							if(g1 != null)
+							
+							if(g1 != null) {
+								double x = getValue(S[1], "x");
+								double y = getValue(S[1], "y");
+								System.out.printf("x, %f, y: %f\n", x, y);
+								g1.setTranslateX(x);
+								g1.setTranslateY(y);
 								g.getChildren().add(g1);
+							}
+								
 						}											
 					}
 					continue; 		
@@ -195,12 +200,15 @@ public class SVGParser {
 		}
 		
 		if(S instanceof Polygon) {				
-			((Polygon)S).getPoints().addAll(doubleArray(getString(s, "points")));					
+			((Polygon)S).getPoints().addAll(doubleArray(getString(s, "points")));	
+
 		}
 		
 		if(S instanceof SVGPath) {	
 	
-			((SVGPath)S).setContent(svgPathContent(s));					
+			((SVGPath)S).setContent(svgPathContent(s));		
+			((SVGPath)S).setFillRule(getFillRule(s));
+			
 		}
 		
 	
@@ -211,8 +219,7 @@ public class SVGParser {
 			//SET-FONT
 		}
 		//STYLE CODE FOR SHAPES
-		S.setStroke(getColor(s, "stroke"));
-		System.out.printf("String: %s, Color: %s", s,  getColor(s, "fill"));
+		S.setStroke(getColor(s, "stroke"));	
 		S.setFill(getColor(s, "fill"));
 		
 		//TRANSFORMATION CODES
@@ -251,7 +258,9 @@ public class SVGParser {
 	@return double the value of the given key
 	*/
 	public double getValue(String s, String key) {
-		String valStr = getString(s, key);	
+			
+		String attr =  getAttributeString(s);
+		String valStr = getString(attr, key);	
 		if(!valStr.isEmpty())
 			return Double.parseDouble(valStr);
 		
@@ -265,7 +274,7 @@ public class SVGParser {
 	@return String the content of the given key
 	*/
 	public String getString(String s, String key) {
-		s = s.replaceAll("[\\t\\n\\r]+"," ");
+
 		int index = key.length();
 		if(s.indexOf(" "+key+"=\"") > 0) {
 			index += s.indexOf(" "+key+"=\"")+3;
@@ -307,8 +316,9 @@ public class SVGParser {
 	@return Color JavaFX color of the given key
 	*/
 	public Color getColor(String s, String key) {
-		String color = getString(s, key);
-		
+		String str = getAttributeString(s);
+		String color = getString(str, key);
+		System.out.printf("Color: %s, Key: %s\n", color, key);
 		SVGColor svgColor = new SVGColor();
 		if (color != null) {
 			double op = opacityValue(s, key+"-opacity");
@@ -369,6 +379,7 @@ public class SVGParser {
 		S[1]= rst;	
 		return rst.length();
 	}
+	//Thanh added
 	private int isSelfClose(String s, int index) {
 		int close = s.indexOf(">", index);		
 		
@@ -392,12 +403,12 @@ public class SVGParser {
 		
 	
 	}	
-	
-	public String getContent(String s) {
+	//Thanh added
+	protected String getContent(String s) {
 		 return s.substring(s.indexOf(">")+1, s.lastIndexOf("<")-1);		
 	}	
 	
-	//Thanh added function
+	//Thanh added function (For flat svg structure)
 	protected List<String> getSvgObjectWithRegex(String s) {
 		List<String> obList = new ArrayList<String>();		
 					
@@ -417,10 +428,9 @@ public class SVGParser {
 	protected String findKey(String s, int index) {
 		
 		String key = "((svg)|(rect)|(circle)|(ellipse)|(line)|(polyline)|(polygon)|(path))";
-		Pattern K_REGEX = Pattern.compile(".{"+index+"}(<"+key+" )", Pattern.DOTALL);
-
-		
+		Pattern K_REGEX = Pattern.compile(".{"+index+"}(<"+key+" )", Pattern.DOTALL);		
 		Matcher matcher = K_REGEX.matcher(s);	
+		
 		if(matcher.find()) {
 			String rs = matcher.group(0);
 			rs = rs.substring(rs.lastIndexOf("<")+1, rs.length()-1);
@@ -429,6 +439,20 @@ public class SVGParser {
 		}
 			
 		return "";
+	}
+	
+	//Thanh added
+	public FillRule getFillRule(String s) {
+		String str = getAttributeString(s);
+		str = getString(str, "fill-rule");
+		if(str.equals("evenodd"))
+			return FillRule.EVEN_ODD;
+		
+		return FillRule.NON_ZERO;
+	}
+	//Thanh added
+	private String getAttributeString(String s) {
+		return s.substring(s.indexOf("<"), s.indexOf(">"));
 	}
 	
 	private String fileContent;			

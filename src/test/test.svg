@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" version="1.1">
-	<svg  >
+	<svg x="100" >
 		<svg >
 			<circle cx="40" cy="40" r="24" style="stroke:#006600; fill:#00cc00"/> 
 			<rect x="150" y="150" height="100" width="100"
@@ -15,6 +15,17 @@
 		</svg>
 	</svg>
 	<circle cx="10" cy="200" r="24" style="stroke:#006600; fill:red"/> 
-	<path style=" stroke:none;fill-rule:evenodd;fill:rgb(0%,0%,0%);fill-opacity:1;" d="M 42.71875 47.160156 L 41.519531 45.960938 L 42.71875 772.441406 Z M 42.71875 47.160156 "/>
+	<path style=" stroke:none;fill-rule:evenodd;fill:#006600;fill-opacity:1;" d="M 42.71875 47.160156 L 41.519531 45.960938 L 42.71875 772.441406 Z M 42.71875 47.160156 "/>
 	
+  <path id="lineAB" d="M 100 350 l 150 -300" stroke="red"
+  stroke-width="3" fill="none" />
+  <path id="lineBC" d="M 250 50 l 150 300" stroke="red"
+  stroke-width="3" fill="none" />
+  <path d="M 175 200 l 150 0" stroke="green" stroke-width="3"
+  fill="none" />
+  <path d="M 100 350 q 150 -300 300 0" stroke="blue"
+  stroke-width="5" fill="none" />
+
+
+</svg>
 </svg>

@@ -40,8 +40,7 @@ public class SVGColor {
     @return Color or null if string is invalid...
     */
     public Color svgColor(String color, double value) {
-    	
-    	  	
+    	    	  	
     	try {
 			color = color.toLowerCase();
 			String s = color.trim();
