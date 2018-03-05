@@ -9,6 +9,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
+import javafx.scene.Group;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Ellipse;
@@ -47,36 +48,68 @@ public class SVGParser {
 			  length = inFile.read(buf);
 			  
 			  fileContent = new String(buf, 0, length);
-			  String[] S = {fileContent, ""};
-			  
-			  svgObject(S, "svg");
-			  
-			  
-			  System.out.println(S[1]);
-			  
+		
+			
 	}
 	
+	public Group getObject() {
+		String[] S = {fileContent, ""};
+		svgObject(S, "svg", 0);
+//		System.out.println(S[1]);
+		return buildObject(S[1]);
+		
+	}
 	//Thanh added for test
-	public List<Shape> getSceneObjects() {
-		long start = System.currentTimeMillis();
-     	List<String> list = getSvgObjectWithRegex(fileContent); 
-		long end = System.currentTimeMillis();
-	
-		System.out.println("List build time: "+(end - start));
-		List<Shape> shapeList = new ArrayList<Shape>();
-		
-		long start1 = System.currentTimeMillis();
-		for(String s: list) {
+	public Group buildObject(String content) {
+		Group g = new Group();
+		if(!content.isEmpty()) {
+			String key = findKey(content);
+//			System.out.println("Key: "+key);
+			int index = 0,  strlen = 0, length = content.length();
+			String[] S = {content, ""};
 			
-			Shape sh = buildShape(s);
-			if(sh !=null)
-				shapeList.add(sh);
+			while(index < length){
+				if(key == "svg") 
+				{
+					strlen = svgObject(S, "svg", index);
+					index += strlen;				
+					
+					if(strlen > 0) {
+
+						double x = getValue(S[0], "x");
+						double y = getValue(S[0], "y");
+
+						g.setTranslateX(x);
+						g.setTranslateY(y);
+				
+						String cont = getContent(S[1]);
+						Group g1 = buildObject(cont);
+						if(g1 != null)
+							g.getChildren().add(g1);
+						
+					}
+				}
+				
+				if(key != "svg" && !key.isEmpty()) 
+				{
+					 strlen = svgObject(S, key, index);
+					 index += strlen;
+					 Shape sh = buildShape(S[1]);
+					 if(sh!= null) {					
+						g.getChildren().add(sh);
+					 }
+					
+				 }
+				 	
+					return g;
+								
+				
+			}
+			
+			
 		}
-		long end1 = System.currentTimeMillis();
-		System.out.println("Objects build time: "+(end1 - start1));
-		
-		return shapeList;
-		
+		return null;
+			
 	}
 	
 	//Thanh added for test
@@ -210,10 +243,10 @@ public class SVGParser {
 	@return double the value of the given key
 	*/
 	public double getValue(String s, String key) {
-		String valStr = getString(s, key);
-		if(valStr != null) {
+		String valStr = getString(s, key);	
+		if(!valStr.isEmpty())
 			return Double.parseDouble(valStr);
-		}
+		
 		return 0;		
 	}
 	
@@ -226,15 +259,7 @@ public class SVGParser {
 	public String getString(String s, String key) {
 
 		int index = key.length();
-		if(key == "text") {			
-			int tIndex = s.indexOf(">")+1;
-			return s.substring(tIndex, s.indexOf("<", tIndex));
-		}
-		if(s.indexOf("<"+key) > 0) {
-			index += s.indexOf("<"+key)+1;
-			return s.substring(index, s.indexOf("/>", index));
-		}
-		else if(s.indexOf(key+"=\"") > 0) {
+		if(s.indexOf(key+"=\"") > 0) {
 			index += s.indexOf(key+"=\"")+2;
 			return s.substring(index, s.indexOf("\"", index));
 		}
@@ -246,7 +271,17 @@ public class SVGParser {
 		
 			return s.substring(index, s.indexOf(";", index));
 		}
-		return null;	
+		
+		else if(key == "text") {			
+			int tIndex = s.indexOf(">")+1;
+			return s.substring(tIndex, s.indexOf("<", tIndex));
+		}
+		else if(s.indexOf("<"+key+" ") > 0) {
+			index += s.indexOf("<"+key)+1;
+			return s.substring(index, s.indexOf("/>", index));
+		}
+		
+		return "";	
 				
 	}
 	/**
@@ -283,36 +318,43 @@ public class SVGParser {
 	@param key String the designated key (e.g. key rect -> <rect...fill-opacity="0.5".../>)
 	@return int the length of element-2-string
 	*/
-	public int svgObject(String[] S, String key) {
-		int start = S[0].indexOf("<"+key);	
-		int end = start;		
+	public int svgObject(String[] S, String key, int index) {
+
+		int start = S[0].indexOf("<"+key, index);	
+		int close = isSelfClose(S[0], start);	
+		
 		if(start > -1) {	
-			end = isSelfClose(S[0], start);
-			if(end<0) {															
-				int firstClose = S[0].indexOf("/"+key+">", end)+key.length()+2; 			
-				end = firstClose;
-				int oInd = start+key.length()+1;
 			
-				while(oInd < firstClose){
-					int open = S[0].indexOf("<"+key, oInd); 
+			if( close < 0) { 	// Not self close tag														
+				close = S[0].indexOf("/"+key+">", start)+key.length()+2; 	//First close		
+			
+				int oInd = index + key.length() + 1; 
+
+				while(oInd < close){
+					int open = S[0].indexOf("<"+key, oInd); //count from second open
 					
-					if(open > 0) {						
+					if(open > 0 && open < close) {						
 						oInd = open+key.length()+1;
-						if(isSelfClose(S[0], oInd) > 0)
-							continue;
-						int close = S[0].indexOf("/"+key+">", end);
-						if(close > 0)
-							end = close+key.length()+2;
+						if(isSelfClose(S[0], oInd) < 0) {
+							int c = S[0].indexOf("/"+key+">", close); //count from second close
+							if(c > 0) 
+								close = c+key.length()+2;
+												
+						}					
 					}
 					else
 						break;						
 				}				
 			}			
-		
-			String rt = S[0].substring(start, end);
-				   S[1]= rt;
-		    
-			return rt.length();
+			
+			String rst = S[0].substring(start, close);{
+				 S[1]= rst;
+				 System.out.println("Search result: \n"+rst);
+			}
+				  
+				
+//		    System.out.printf("Start: %d, End: %d, Length: %d, Key: %s\n", start, end, S[0].length(), key);
+			return rst.length();
 			
 		}
 		return 0;
@@ -321,8 +363,7 @@ public class SVGParser {
 		int close = s.indexOf(">", index);		
 		
 		if(close > 0) {
-			if(s.indexOf("/>", index) == (close -1)) {
-				
+			if(s.indexOf("/>", index) == (close -1)) {				
 				return close+1;
 			}
 		}			
@@ -338,19 +379,23 @@ public class SVGParser {
 	*/
 	public String svgPathContent(String s) {
 		return getString(s, " d");	
+		
 	
+	}	
+	
+	public String getContent(String s) {
+		 return s.substring(s.indexOf(">")+1, s.lastIndexOf("<")-1).trim();
+		
 	}	
 	
 	//Thanh added function
 	protected List<String> getSvgObjectWithRegex(String s) {
-		List<String> obList = new ArrayList<String>();
-		
+		List<String> obList = new ArrayList<String>();		
 					
 		String key = "((rect)|(circle)|(ellipse)|(line)|(polyline)|(polygon)|(path)|(svg))";
 		Pattern O_REGEX = Pattern.compile("(<("+key+")[^<(/>)>]*>[^<>]*?(<\\2[^<>]*>([^<>]*?(\n))*[^<>]*?</\\2>)*[^<>]*?(</\\2>))|(<"+key+"[^<>]*/>)");
-//	   Pattern sd_REGEX = Pattern.compile("(<("+key+")[^<(/>)>]*>[^<>]*?(<\\2[^<>]*>(.*?(\n))*.*?</\\2>)*?[^<>]*?(</\\2>))|(<"+key+"[^<>]*/>)");
-	   
-	   Matcher matcher = O_REGEX.matcher(s);	
+
+	    Matcher matcher = O_REGEX.matcher(s);	
 	
 		while (matcher.find()) {
 			obList.add(matcher.group(0));
@@ -359,7 +404,15 @@ public class SVGParser {
 		return obList;
 	}
 	
-	
+	//Thanh added function 
+	protected String findKey(String s) {
+		String key = "((svg)|(rect)|(circle)|(ellipse)|(line)|(polyline)|(polygon)|(path))";
+		Pattern K_REGEX = Pattern.compile("^(<"+key+" )");
+		Matcher matcher = K_REGEX.matcher(s);	
+		if(matcher.find())
+			return matcher.group(0).replaceAll("<| ", "");
+		return "";
+	}
 	
 	private String fileContent;			
 }
