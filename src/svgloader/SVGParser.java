@@ -57,10 +57,11 @@ public class SVGParser {
 		String[] S = {fileContent, ""};
 		svgObject(S, "svg", 0);
 		return buildObject(S[0]);
-		
+//		return null;
 	}
 	//Thanh added for test
 	public Group buildObject(String content) {
+//		System.out.println(content + "End---");
 		Group g = new Group();
 		if(!content.isEmpty()) {
 			String key = "";
@@ -74,7 +75,7 @@ public class SVGParser {
 				if(key.equals("svg") ) 
 				{
 					strlen = svgObject(S, "svg", index);
-					
+//					System.out.printf("S[0]: %s, S[1] :%s\n", S[0], S[1]);
 		
 					if(strlen > 0) {
 						index += strlen;	
@@ -87,7 +88,6 @@ public class SVGParser {
 							if(g1 != null) {
 								double x = getValue(S[1], "x");
 								double y = getValue(S[1], "y");
-								System.out.printf("x, %f, y: %f\n", x, y);
 								g1.setTranslateX(x);
 								g1.setTranslateY(y);
 								g.getChildren().add(g1);
@@ -98,13 +98,13 @@ public class SVGParser {
 					continue; 		
 						
 				}
-						
+			
 				if(!key.equals("svg") && !key.isEmpty())
 				{
 					 strlen = svgObject(S, key, index);
-					 index += strlen;
-					 
+					 					 
 					 if(strlen > 0) {
+						 index += strlen;
 						 Shape sh = buildShape(S[1]);
 						 if(sh!= null) {					
 							g.getChildren().add(sh);
@@ -154,7 +154,8 @@ public class SVGParser {
 			sh = new SVGPath();
 			shape(sh, s);
 		}
-		if(s.indexOf("<text") > -1) {			
+		if(s.indexOf("<text") > -1) {		
+		
 			sh = new Text();
 			shape(sh, s);
 		}
@@ -166,7 +167,8 @@ public class SVGParser {
 	@param S JFX-Shape (Rectangle, Ellipse, Circle, etc.)
 	@param s String, the parsing string (e.g. <circle .. style="...."/>)
 	*/
-	public void shape(Shape S, String s) {
+	public void shape(Shape S, String s) { 
+		//ALL SHAPE CAN BE CONVERTED TO SVGPATH
 		if(S instanceof Rectangle) {
 			((Rectangle)S).setX(getValue(s, "x"));
 			((Rectangle)S).setY(getValue(s, "y"));
@@ -200,27 +202,29 @@ public class SVGParser {
 		}
 		
 		if(S instanceof Polygon) {				
-			((Polygon)S).getPoints().addAll(doubleArray(getString(s, "points")));	
-
+			((Polygon)S).getPoints().addAll(doubleArray(getString(s, "points")));
 		}
 		
-		if(S instanceof SVGPath) {	
-	
+		if(S instanceof SVGPath) {		
 			((SVGPath)S).setContent(svgPathContent(s));		
-			((SVGPath)S).setFillRule(getFillRule(s));
-			
+			((SVGPath)S).setFillRule(getFillRule(s));			
 		}
 		
 	
-		if(S instanceof Text) {				
+		if(S instanceof Text) {		
+			
 			((Text)S).setText(getString(s, "text"));
 			((Text)S).setX(getValue(s, "x"));
 			((Text)S).setY(getValue(s, "y"));
+			
 			//SET-FONT
 		}
 		//STYLE CODE FOR SHAPES
 		S.setStroke(getColor(s, "stroke"));	
+	
 		S.setFill(getColor(s, "fill"));
+				
+		S.setStrokeWidth(getValue(s, "stroke-width"));
 		
 		//TRANSFORMATION CODES
 		//FILL-RULE CODES
@@ -276,24 +280,27 @@ public class SVGParser {
 	public String getString(String s, String key) {
 
 		int index = key.length();
-		if(s.indexOf(" "+key+"=\"") > 0) {
+		if(s.indexOf(" "+key+"=\"") > -1) {
 			index += s.indexOf(" "+key+"=\"")+3;
 			return s.substring(index, s.indexOf("\"", index));
 
 		}
 		
-		else if(s.indexOf(key+":") > 0) { //CASE OF CSS FORMAT
-			if(s.indexOf("style")>0)
+		else if(s.indexOf(key+":") > -1) { //CASE OF CSS FORMAT
+			
+			if(s.indexOf("style")>-1)
 				s = getString(s, "style")+";";
 			
 			int ind = s.indexOf(key+":");
-			if(ind > 0) {
+
+			if(ind > -1) {
+				
 				index +=ind + 1;
 				return s.substring(index, s.indexOf(";", index));
+
 			}				
 				
-			return "";
-		
+			return "";		
 
 		}
 		
@@ -301,7 +308,7 @@ public class SVGParser {
 			int tIndex = s.indexOf(">")+1;
 			return s.substring(tIndex, s.indexOf("<", tIndex));
 		}
-		else if(s.indexOf("<"+key+" ") > 0) {
+		else if(s.indexOf("<"+key+" ") > -1) {
 			index += s.indexOf("<"+key)+1;
 			return s.substring(index, s.indexOf("/>", index));
 		}
@@ -318,7 +325,7 @@ public class SVGParser {
 	public Color getColor(String s, String key) {
 		String str = getAttributeString(s);
 		String color = getString(str, key);
-		System.out.printf("Color: %s, Key: %s\n", color, key);
+		
 		SVGColor svgColor = new SVGColor();
 		if (color != null) {
 			double op = opacityValue(s, key+"-opacity");
@@ -347,36 +354,42 @@ public class SVGParser {
 	public int svgObject(String[] S, String key, int index) {
 
 		int start = S[0].indexOf("<"+key, index);	
-		int close = isSelfClose(S[0], start);	
+			
 		String rst = "";
 		if(start > -1) {	
-			
+			int close = isSelfClose(S[0], start);
 			if( close < 0) { 	// Not self close tag														
 				close = S[0].indexOf("/"+key+">", start)+key.length()+2; 	//First close		
-			
-				int oInd = index + key.length() + 1; 
 
-				while(oInd < close){
-					int open = S[0].indexOf("<"+key, oInd); //count from second open
+				int oInd = start + key.length() + 1; 
+			
+				while(oInd < close && oInd > 0){
+					int open = S[0].indexOf("<"+key, oInd); // next open
 					
-					if(open > 0 && open < close) {						
+					if(open > -1 && open+key.length()+1 < close) {
+					
 						oInd = open+key.length()+1;
-						if(isSelfClose(S[0], oInd) < 0) {
-							int c = S[0].indexOf("/"+key+">", close); //count from second close
-							if(c > 0) 
-								close = c+key.length()+2;												
-						}					
+						if(isSelfClose(S[0], oInd) < 0 ) {
+							int c = S[0].indexOf("/"+key+">", close); //next close
+							if(c > -1) {
+								close = c+key.length()+2;	
+							}
+							else
+								break;
+						}	
+						
 					}
 					else
 						break;						
 				}				
 			}			
 
-			rst = S[0].substring(start, close).trim();	
-			
+			rst = S[0].substring(start, close).trim();				
 		}
 				
 		S[1]= rst;	
+//		System.out.println(rst + "End---Index: "+close+"---S[0]: "+ S[0]);
+		System.out.println(S[1] + "End---");
 		return rst.length();
 	}
 	//Thanh added
@@ -405,14 +418,19 @@ public class SVGParser {
 	}	
 	//Thanh added
 	protected String getContent(String s) {
-		 return s.substring(s.indexOf(">")+1, s.lastIndexOf("<")-1);		
+//		System.out.println(s + "End---");
+		 int start = s.indexOf(">");
+		 int end = s.lastIndexOf("<");
+		 if(start > -1 && end > -1)
+		 return s.substring(start+1, end-1);
+		 return s;
 	}	
 	
 	//Thanh added function (For flat svg structure)
 	protected List<String> getSvgObjectWithRegex(String s) {
 		List<String> obList = new ArrayList<String>();		
 					
-		String key = "((rect)|(circle)|(ellipse)|(line)|(polyline)|(polygon)|(path)|(svg))";
+		String key = "((rect)|(circle)|(ellipse)|(line)|(polyline)|(polygon)|(path)|(svg)|(text))";
 		Pattern O_REGEX = Pattern.compile("(<("+key+")[^<(/>)>]*>[^<>]*?(<\\2[^<>]*>([^<>]*?(\n))*[^<>]*?</\\2>)*[^<>]*?(</\\2>))|(<"+key+"[^<>]*/>)");
 
 	    Matcher matcher = O_REGEX.matcher(s);	
@@ -427,15 +445,14 @@ public class SVGParser {
 	//Thanh added function 
 	protected String findKey(String s, int index) {
 		
-		String key = "((svg)|(rect)|(circle)|(ellipse)|(line)|(polyline)|(polygon)|(path))";
+		String key = "((svg)|(rect)|(circle)|(ellipse)|(line)|(polyline)|(polygon)|(path)|(text))";
 		Pattern K_REGEX = Pattern.compile(".{"+index+"}(<"+key+" )", Pattern.DOTALL);		
 		Matcher matcher = K_REGEX.matcher(s);	
 		
 		if(matcher.find()) {
 			String rs = matcher.group(0);
-			rs = rs.substring(rs.lastIndexOf("<")+1, rs.length()-1);
-			
-			return rs;
+			return rs.substring(rs.lastIndexOf("<")+1, rs.length()-1);
+
 		}
 			
 		return "";
@@ -452,6 +469,7 @@ public class SVGParser {
 	}
 	//Thanh added
 	private String getAttributeString(String s) {
+//		System.out.println("Input string: "+s);
 		return s.substring(s.indexOf("<"), s.indexOf(">"));
 	}
 	
