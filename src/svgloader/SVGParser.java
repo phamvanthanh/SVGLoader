@@ -49,63 +49,77 @@ public class SVGParser {
 			  
 			  fileContent = new String(buf, 0, length);
 		
-			
 	}
 	
 	public Group getObject() {
 		String[] S = {fileContent, ""};
 		svgObject(S, "svg", 0);
 //		System.out.println(S[1]);
-		return buildObject(S[1]);
+		return buildObject(S[0]);
 		
 	}
 	//Thanh added for test
 	public Group buildObject(String content) {
 		Group g = new Group();
 		if(!content.isEmpty()) {
-			String key = findKey(content);
-//			System.out.println("Key: "+key);
+			String key = "";
+
 			int index = 0,  strlen = 0, length = content.length();
 			String[] S = {content, ""};
 			
-			while(index < length){
-				if(key == "svg") 
+			while(index < length)
+			{
+				key = findKey(content, index);
+
+				if(key.equals("svg") ) 
 				{
 					strlen = svgObject(S, "svg", index);
-					index += strlen;				
 					
+		
 					if(strlen > 0) {
-
+						index += strlen;	
 						double x = getValue(S[0], "x");
 						double y = getValue(S[0], "y");
-
+						
 						g.setTranslateX(x);
 						g.setTranslateY(y);
-				
-						String cont = getContent(S[1]);
-						Group g1 = buildObject(cont);
-						if(g1 != null)
-							g.getChildren().add(g1);
 						
+						String cont = getContent(S[1]);
+						if(!cont.isEmpty()) {
+
+							Group g1 = buildObject(cont);
+							if(g1 != null)
+								g.getChildren().add(g1);
+						}											
 					}
+					continue; // 			
+						
 				}
-				
-				if(key != "svg" && !key.isEmpty()) 
+						
+				if(!key.equals("svg") && !key.isEmpty())
 				{
+
 					 strlen = svgObject(S, key, index);
 					 index += strlen;
-					 Shape sh = buildShape(S[1]);
-					 if(sh!= null) {					
-						g.getChildren().add(sh);
+					 
+					 if(strlen > 0) {
+						 Shape sh = buildShape(S[1]);
+						 if(sh!= null) {					
+							g.getChildren().add(sh);							
+						 }
 					 }
-					
+
+					 
+				 }	
+				 else {
+//					 System.out.printf("At break point Index: %d, Length: %d, S[0]: %s,\n S[1]: %s\n",index, length, S[0], S[1]);
+					 break; //IF NO MORE TAGS 
 				 }
-				 	
-					return g;
-								
+					
+				
 				
 			}
-			
+			 return g;
 			
 		}
 		return null;
@@ -322,7 +336,7 @@ public class SVGParser {
 
 		int start = S[0].indexOf("<"+key, index);	
 		int close = isSelfClose(S[0], start);	
-		
+		String rst = "";
 		if(start > -1) {	
 			
 			if( close < 0) { 	// Not self close tag														
@@ -338,26 +352,22 @@ public class SVGParser {
 						if(isSelfClose(S[0], oInd) < 0) {
 							int c = S[0].indexOf("/"+key+">", close); //count from second close
 							if(c > 0) 
-								close = c+key.length()+2;
-												
+								close = c+key.length()+2;												
 						}					
 					}
 					else
 						break;						
 				}				
 			}			
-			
-			String rst = S[0].substring(start, close);{
-				 S[1]= rst;
-				 System.out.println("Search result: \n"+rst);
-			}
-				  
+					  
 				
-//		    System.out.printf("Start: %d, End: %d, Length: %d, Key: %s\n", start, end, S[0].length(), key);
-			return rst.length();
+//		    System.out.printf("Start: %d, Close: %d, Length: %d, Key: %s\n", start, close, rst.length(), key);
+			rst = S[0].substring(start, close).trim();	
 			
 		}
-		return 0;
+				
+		S[1]= rst;	
+		return rst.length();
 	}
 	private int isSelfClose(String s, int index) {
 		int close = s.indexOf(">", index);		
@@ -405,12 +415,18 @@ public class SVGParser {
 	}
 	
 	//Thanh added function 
-	protected String findKey(String s) {
+	protected String findKey(String s, int index) {
+		
 		String key = "((svg)|(rect)|(circle)|(ellipse)|(line)|(polyline)|(polygon)|(path))";
-		Pattern K_REGEX = Pattern.compile("^(<"+key+" )");
+		Pattern K_REGEX = Pattern.compile(".{"+index+"}(<"+key+" )", Pattern.DOTALL);
+//		System.out.println("K_REG: "+K_REGEX);
+		
 		Matcher matcher = K_REGEX.matcher(s);	
-		if(matcher.find())
-			return matcher.group(0).replaceAll("<| ", "");
+		if(matcher.find()) {
+			String rs = matcher.group(0);
+			return rs.substring(rs.lastIndexOf("<")+1, rs.length()-1);
+		}
+			
 		return "";
 	}
 	
