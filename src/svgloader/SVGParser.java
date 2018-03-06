@@ -8,7 +8,14 @@ import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
+import javafx.scene.shape.Ellipse;
+import javafx.scene.shape.Line;
+import javafx.scene.shape.Polygon;
+import javafx.scene.shape.Polyline;
+import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
+import javafx.scene.text.Text;
 
 //
 public class SVGParser {
@@ -44,7 +51,37 @@ public class SVGParser {
 	@param s String, the parsing string (e.g. <circle .. style="...."/>)
 	*/
 	public void shape(Shape S, String s) {
+		S.setFill(getColor(s,"fill"));
+		S.setLayoutX(getValue(s,"x"));
+		S.setLayoutY(getValue(s,"y"));
+		S.setOpacity(getValue(s,"opacity"));
+		S.setStyle(getString(s,"style"));
 		
+		String tagName=s.substring(s.indexOf('<')+1,s.indexOf(' '));
+		switch(tagName){
+		case "rect":
+			Rectangle rect=(Rectangle)S;
+			break;
+		case "circle":
+			Circle circle=(Circle)S;
+			break;
+		case "text":
+			Text text=(Text)S;
+			break;
+		case "ellipse":
+			Ellipse elp=(Ellipse)S;
+			break;
+		case "polyline":
+			Polyline plLine=(Polyline)S;
+			break;
+		case "polygon":
+			Polygon plGon=(Polygon)S;
+			break;
+		case "line":
+			Line line=(Line)S;
+			break;
+		}
+		return;
 	}
 	/**
 	search and parse double array for Polyline and Polygon
@@ -52,8 +89,11 @@ public class SVGParser {
 	@return double array with 6 elements (see JavaFX or SVG doc)
 	*/
 	public double[] doubleArray(String s) {
-		return null;
-		
+		String[] parsedPoints=getString(s,"points").split("\\s");
+		double[] pointsValue=new double[6];
+		for(int i=0;i<parsedPoints.length;++i)
+			pointsValue[i]=Double.parseDouble(parsedPoints[i]);
+		return pointsValue;
 	}
 	/**
 	search and parse the shape of a viewBox
@@ -78,9 +118,18 @@ public class SVGParser {
 	*/
 	public double getValue(String s, String key) {
 		String value=getString(s,key);
-		if(value.endsWith("cm"))
-			return Double.parseDouble(value.substring(0,value.length()-2))*38.5;//Change to pixel
-		return Double.parseDouble(value)*0.385;
+		switch(key){
+		case "x":
+		case "y":
+		case "width":
+		case "height":
+		case "stroke-width":
+			if(value.endsWith("cm"))
+				return Double.parseDouble(value.substring(0,value.length()-2))*38.5;//Change to pixel
+			return Double.parseDouble(value)*0.385;
+			
+		}
+		return Double.parseDouble(value);
 	}
 	
 	private String getAttribute(String s,String key){//TODO: is case sensitive?
@@ -143,7 +192,7 @@ public class SVGParser {
 	@return Color JavaFX color of the given key
 	*/
 	public Color getColor(String s, String key) {
-		String color = getString(s, key);
+		String color = getAttribute(s, key);
 		if (color != null) {
 			return new SVGColor().svgColor(color); 
 		}
