@@ -115,11 +115,9 @@ public class SVGParser {
 			((SVGPath)S).setStrokeLineCap(getStrokeLineCap(attr));
 			((SVGPath)S).setStrokeLineJoin(getStrokeLineJoin(attr));
 			((SVGPath)S).setStrokeMiterLimit(getStrokeMiterLimit(attr));
-			
-		
+					
 		}
-		
-		
+				
 	
 		if(S instanceof Text) {		
 			
@@ -465,7 +463,7 @@ public class SVGParser {
 		 return s;
 	}	
 	
-	
+	//THIS FUNCTION MAY USE FOR FLAT SVG STRUCTURE
 	protected List<String> getSvgObjectWithRegex(String s) { // Get tag list (for flat svg structure)
 		List<String> obList = new ArrayList<String>();		
 					
@@ -569,8 +567,7 @@ public class SVGParser {
 				else if(len == 3)
 					return new Rotate(arr[0], arr[1], arr[2]);
 				else if(len == 4)
-					return new Rotate(arr[0], arr[1], arr[2], arr[3]);
-				
+					return new Rotate(arr[0], arr[1], arr[2], arr[3]);				
 			}
 			else if(trans.indexOf("matrix")>-1) {
 				if(len==6)
