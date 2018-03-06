@@ -53,9 +53,7 @@ public class SVGParser {
 			  buf = new byte[inFile.available()];
 			  length = inFile.read(buf);
 			  
-			  fileContent = (new String(buf, 0, length)).replaceAll("[\\t\\n\\r]+"," ");
-			
-		
+			  fileContent = (new String(buf, 0, length)).replaceAll("[\\t\\n\\r]+"," ");		
 	}
 	
 
@@ -141,8 +139,7 @@ public class SVGParser {
 		
 		Transform trans = getTransform(attr);
 		if(trans != null)
-			S.getTransforms().add(trans);
-	
+			S.getTransforms().add(trans);	
 				
 	}
 	/**
@@ -197,7 +194,6 @@ public class SVGParser {
 		if(s.indexOf(" "+key+"=\"") > -1) {
 			index += s.indexOf(" "+key+"=\"")+3;
 			return s.substring(index, s.indexOf("\"", index));
-
 		}
 		
 		else if(s.indexOf(key+":") > -1) { //CASE OF CSS FORMAT
@@ -213,10 +209,8 @@ public class SVGParser {
 				
 				index +=ind + 1;
 				return s.substring(index, s.indexOf(";", index));
-			}				
-				
-			return "";		
-
+			}			
+			return "";
 		}
 		
 		else if(key == "text") {			
@@ -239,10 +233,10 @@ public class SVGParser {
 	*/
 	public Color getColor(String s, String key) {
 		
-		String color = getString(s, key);
+		String color = getString(s, key);		
 		
-		SVGColor svgColor = new SVGColor();
 		if (color != null) {
+			SVGColor svgColor = new SVGColor();
 			double op = opacityValue(s, key+"-opacity");
 			return svgColor.svgColor(color, op); // SVGColor API
 		}
@@ -291,8 +285,7 @@ public class SVGParser {
 							}
 							else {
 								System.out.println("SVG file contains errors");
-								return close - start;
-								
+								return close - start;								
 							}								
 						}						
 					}
@@ -324,10 +317,8 @@ public class SVGParser {
 	 */
 		   
 	public Group getObject() {
-		String[] S = {fileContent, ""};
-	
+		String[] S = {fileContent, ""};	
 		return buildObject(S[0]);
-
 	}
 	/**
 	* Search and parse string to Javafx objects
@@ -372,8 +363,14 @@ public class SVGParser {
 					continue; 		
 						
 				}
+				else if(key.equals("g")) {
+					strlen = svgObject(S, key, index);
+					String s = getAttributeString(S[1]);
+					String cont = getContent(S[1]);
+					//TO BE CONTINUED
+				}
 			
-				if(!key.equals("svg") && !key.isEmpty())
+				else if(!key.equals("svg") && !key.isEmpty())
 				{
 					 strlen = svgObject(S, key, index);
 					 					 
@@ -385,11 +382,12 @@ public class SVGParser {
 						
 						 }
 					 }					 
-				 }	
+				 }				
 				 else {
 //					 System.out.printf("At break point Index: %d, Length: %d, S[0]: %s,\n S[1]: %s\n",index, length, S[0], S[1]);
 					 break; //IF NO MORE TAGS 
-				 }			
+				 }
+				
 				
 			}
 			 return g;			
@@ -427,13 +425,11 @@ public class SVGParser {
 			shape(sh, s);
 		}
 	
-		if(s.indexOf("<path") > -1) {
-			
+		if(s.indexOf("<path") > -1) {			
 			sh = new SVGPath();
 			shape(sh, s);
 		}
 		if(s.indexOf("<text") > -1) {		
-		
 			sh = new Text();
 			shape(sh, s);
 		}
