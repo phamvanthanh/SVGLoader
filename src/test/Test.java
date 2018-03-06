@@ -15,7 +15,14 @@ public class Test extends Application {
 	public void start(Stage primaryStage) {
 		try {
 			
-			SVGParser parser = new SVGParser("C:/SVG/src/test/test2.svg");
+			Application.Parameters params = getParameters();
+	        java.util.List<String> pl = params.getRaw();
+	        SVGParser parser = null;
+	        if(pl== null)
+	        	parser = new SVGParser("C:/SVG/src/test/test3.svg");
+	        else
+	        	parser = new SVGParser(pl.get(0));
+	        
 			long start = System.currentTimeMillis();
 			Group g = parser.getObject();	
 			long end = System.currentTimeMillis();
@@ -33,8 +40,11 @@ public class Test extends Application {
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
+		
 	}
 	public static void main(String[] args) {
+		
 		launch(args);
+		
 	}
 }

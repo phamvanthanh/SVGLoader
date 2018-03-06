@@ -58,126 +58,14 @@ public class SVGParser {
 		
 	}
 	
-	public Group getObject() {
-		String[] S = {fileContent, ""};
-		svgObject(S, "svg", 0);
-		return buildObject(S[0]);
 
-	}
-	//Thanh added for test
-	public Group buildObject(String content) {
-
-		Group g = new Group();
-		if(!content.isEmpty()) {
-			String key = "";
-			int index = 0,  strlen = 0, length = content.length();
-			String[] S = {content, ""};
-			
-			while(index < length)
-			{
-				key = findKey(content, index);
-//				System.out.println("Key: "+key);
-			
-				if(key.equals("svg") ) 
-				{
-					strlen = svgObject(S, "svg", index);
-		
-					if(strlen > 0) {
-						index += strlen;	
-
-						String cont = getContent(S[1]);
-						if(!cont.isEmpty()) {
-						
-							Group g1 = buildObject(cont);
-							
-							if(g1 != null) {
-								double x = getValue(S[1], "x");
-								double y = getValue(S[1], "y");
-								g1.setTranslateX(x);
-								g1.setTranslateY(y);
-								g.getChildren().add(g1);
-							}
-								
-						}											
-					}
-					continue; 		
-						
-				}
-			
-				if(!key.equals("svg") && !key.isEmpty())
-				{
-					 strlen = svgObject(S, key, index);
-					 					 
-					 if(strlen > 0) {
-						 index += strlen;
-						 Shape sh = buildShape(S[1]);
-						 if(sh!= null) {					
-							g.getChildren().add(sh);
-						
-						 }
-					 }					 
-				 }	
-				 else {
-//					 System.out.printf("At break point Index: %d, Length: %d, S[0]: %s,\n S[1]: %s\n",index, length, S[0], S[1]);
-					 break; //IF NO MORE TAGS 
-				 }			
-				
-			}
-			 return g;			
-		}
-		return null;
-			
-	}
-	
-	//Thanh added for test
-	public Shape buildShape(String s) {
-		Shape sh = null;
-
-		if(s.indexOf("<rect") > -1) {
-			sh = new Rectangle();			
-			shape(sh, s);			
-		}
-		if(s.indexOf("<circle") > -1) {
-			sh = new Circle();
-			shape(sh, s);
-		}
-		if(s.indexOf("<ellipse") > -1) {
-			sh = new Ellipse();
-			shape(sh, s);
-		}
-		if(s.indexOf("<line") > -1) {
-			sh = new Line();
-			shape(sh, s);
-		}
-		if(s.indexOf("<polyline") > -1) {
-			sh = new Polyline();
-			shape(sh, s);
-		}
-		if(s.indexOf("<polygon") > -1) {
-			sh = new Polygon();
-			shape(sh, s);
-		}
-	
-		if(s.indexOf("<path") > -1) {
-			
-			sh = new SVGPath();
-			shape(sh, s);
-		}
-		if(s.indexOf("<text") > -1) {		
-		
-			sh = new Text();
-			shape(sh, s);
-		}
-		return sh;
-		
-	}
 	/**
 	Shaping a geometrical form
 	@param S JFX-Shape (Rectangle, Ellipse, Circle, etc.)
 	@param s String, the parsing string (e.g. <circle .. style="...."/>)
 	*/
 	public void shape(Shape S, String s) { 
-		//ALL SHAPE CAN BE CONVERTED TO SVGPATH
+		
 		String attr = getAttributeString(s);
 		if(S instanceof Rectangle) {
 			((Rectangle)S).setX(getValue(attr, "x"));
@@ -433,6 +321,129 @@ public class SVGParser {
 		return getString(s, "d");			
 	}	
 	/*------------------Thanh ADDED METHODS--------------------*/
+	/**
+	 * Return Group contains all SVG object
+	 */
+		   
+	public Group getObject() {
+		String[] S = {fileContent, ""};
+	
+		return buildObject(S[0]);
+
+	}
+	/**
+	* Search and parse string to Javafx objects
+	* @param s String parsing string	
+	* @return Javafx Group group contains all parsed Javafx objects
+	*/
+	public Group buildObject(String content) {
+
+		Group g = new Group();
+		if(!content.isEmpty()) {
+			String key = "";
+			int index = 0,  strlen = 0, length = content.length();
+			String[] S = {content, ""};
+			
+			while(index < length)
+			{
+				key = findKey(content, index);
+			
+				if(key.equals("svg") ) 
+				{
+					strlen = svgObject(S, "svg", index);
+		
+					if(strlen > 0) {
+						index += strlen;	
+
+						String cont = getContent(S[1]);
+						if(!cont.isEmpty()) {
+						
+							Group g1 = buildObject(cont);
+							
+							if(g1 != null) {
+								double x = getValue(S[1], "x");
+								double y = getValue(S[1], "y");
+								if(x != 0)
+									g1.setTranslateX(x);
+								if(y != 0)
+									g1.setTranslateY(y);
+								g.getChildren().add(g1);
+							}
+								
+						}											
+					}
+					continue; 		
+						
+				}
+			
+				if(!key.equals("svg") && !key.isEmpty())
+				{
+					 strlen = svgObject(S, key, index);
+					 					 
+					 if(strlen > 0) {
+						 index += strlen;
+						 Shape sh = buildShape(S[1]);
+						 if(sh!= null) {					
+							g.getChildren().add(sh);
+						
+						 }
+					 }					 
+				 }	
+				 else {
+//					 System.out.printf("At break point Index: %d, Length: %d, S[0]: %s,\n S[1]: %s\n",index, length, S[0], S[1]);
+					 break; //IF NO MORE TAGS 
+				 }			
+				
+			}
+			 return g;			
+		}
+		return null;
+			
+	}
+	
+	
+	public Shape buildShape(String s) {
+		Shape sh = null;
+
+		if(s.indexOf("<rect") > -1) {
+			sh = new Rectangle();			
+			shape(sh, s);			
+		}
+		if(s.indexOf("<circle") > -1) {
+			sh = new Circle();
+			shape(sh, s);
+		}
+		if(s.indexOf("<ellipse") > -1) {
+			sh = new Ellipse();
+			shape(sh, s);
+		}
+		if(s.indexOf("<line") > -1) {
+			sh = new Line();
+			shape(sh, s);
+		}
+		if(s.indexOf("<polyline") > -1) {
+			sh = new Polyline();
+			shape(sh, s);
+		}
+		if(s.indexOf("<polygon") > -1) {
+			sh = new Polygon();
+			shape(sh, s);
+		}
+	
+		if(s.indexOf("<path") > -1) {
+			
+			sh = new SVGPath();
+			shape(sh, s);
+		}
+		if(s.indexOf("<text") > -1) {		
+		
+			sh = new Text();
+			shape(sh, s);
+		}
+		return sh;
+		
+	}
+	
 	private int isSelfClose(String s, int index) {
 		int close = s.indexOf(">", index);		
 		
@@ -450,7 +461,7 @@ public class SVGParser {
 		 int start = s.indexOf(">");
 		 int end = s.lastIndexOf("<");
 		 if(start > -1 && end > -1)
-		 return s.substring(start+1, end-1);
+			 return s.substring(start+1, end-1);
 		 return s;
 	}	
 	
@@ -537,7 +548,11 @@ public class SVGParser {
 	public double getStrokeMiterLimit(String s) {
 		return getValue(s, "stroke-miterlimit");
 	}
-	
+	/**
+	 * Search and parse transform
+	 * @param s search string
+	 * @return Javafx Transform object
+	 */
 	public Transform getTransform(String s) {
 
 		String trans = getString(s, "transform");
