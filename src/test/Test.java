@@ -5,6 +5,7 @@ import javafx.application.Application;
 import javafx.stage.Stage;
 import svgloader.SVGParser;
 import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
@@ -18,13 +19,13 @@ public class Test extends Application {
 			Application.Parameters params = getParameters();
 	        java.util.List<String> pl = params.getRaw();
 	        SVGParser parser = null;
-	        if(pl== null)
+	        if(pl.isEmpty())
 	        	parser = new SVGParser("C:/SVG/src/test/test3.svg");
 	        else
 	        	parser = new SVGParser(pl.get(0));
 	        
 			long start = System.currentTimeMillis();
-			Group g = parser.getObject();	
+			Node g = parser.getObject();	
 			long end = System.currentTimeMillis();
 			System.out.println("Time build: "+(end-start));
 			
