@@ -15,7 +15,7 @@ public class Test extends Application {
 	public void start(Stage primaryStage) {
 		try {
 			
-			SVGParser parser = new SVGParser("C:/SVG/src/test/test.svg");
+			SVGParser parser = new SVGParser("C:/SVG/src/test/test2.svg");
 			long start = System.currentTimeMillis();
 			Group g = parser.getObject();	
 			long end = System.currentTimeMillis();

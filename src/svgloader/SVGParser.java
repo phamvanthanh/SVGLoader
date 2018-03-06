@@ -20,7 +20,12 @@ import javafx.scene.shape.Polyline;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.SVGPath;
 import javafx.scene.shape.Shape;
+import javafx.scene.shape.StrokeLineCap;
+import javafx.scene.shape.StrokeLineJoin;
 import javafx.scene.text.Text;
+import javafx.scene.transform.Affine;
+import javafx.scene.transform.Rotate;
+import javafx.scene.transform.Transform;
 
 //
 public class SVGParser {
@@ -57,11 +62,11 @@ public class SVGParser {
 		String[] S = {fileContent, ""};
 		svgObject(S, "svg", 0);
 		return buildObject(S[0]);
-//		return null;
+
 	}
 	//Thanh added for test
 	public Group buildObject(String content) {
-//		System.out.println(content + "End---");
+
 		Group g = new Group();
 		if(!content.isEmpty()) {
 			String key = "";
@@ -71,11 +76,11 @@ public class SVGParser {
 			while(index < length)
 			{
 				key = findKey(content, index);
-
+//				System.out.println("Key: "+key);
+			
 				if(key.equals("svg") ) 
 				{
 					strlen = svgObject(S, "svg", index);
-//					System.out.printf("S[0]: %s, S[1] :%s\n", S[0], S[1]);
 		
 					if(strlen > 0) {
 						index += strlen;	
@@ -127,7 +132,7 @@ public class SVGParser {
 	//Thanh added for test
 	public Shape buildShape(String s) {
 		Shape sh = null;
-	
+
 		if(s.indexOf("<rect") > -1) {
 			sh = new Rectangle();			
 			shape(sh, s);			
@@ -136,8 +141,12 @@ public class SVGParser {
 			sh = new Circle();
 			shape(sh, s);
 		}
+		if(s.indexOf("<ellipse") > -1) {
+			sh = new Ellipse();
+			shape(sh, s);
+		}
 		if(s.indexOf("<line") > -1) {
-			sh = new Rectangle();
+			sh = new Line();
 			shape(sh, s);
 		}
 		if(s.indexOf("<polyline") > -1) {
@@ -169,65 +178,85 @@ public class SVGParser {
 	*/
 	public void shape(Shape S, String s) { 
 		//ALL SHAPE CAN BE CONVERTED TO SVGPATH
+		String attr = getAttributeString(s);
 		if(S instanceof Rectangle) {
-			((Rectangle)S).setX(getValue(s, "x"));
-			((Rectangle)S).setY(getValue(s, "y"));
-			((Rectangle)S).setWidth(getValue(s, "width"));		
-			((Rectangle)S).setHeight(getValue(s, "height"));			
+			((Rectangle)S).setX(getValue(attr, "x"));
+			((Rectangle)S).setY(getValue(attr, "y"));
+			((Rectangle)S).setWidth(getValue(attr, "width"));		
+			((Rectangle)S).setHeight(getValue(attr, "height"));	
+			((Rectangle)S).setArcHeight(getValue(attr, "ry"));
+			((Rectangle)S).setArcWidth(getValue(attr, "ry"));
+			
 		}
 		
 		if(S instanceof Circle) {
-			((Circle)S).setCenterX(getValue(s, "cx"));
-			((Circle)S).setCenterY(getValue(s, "cy"));
-			((Circle)S).setRadius(getValue(s, "r"));
+			((Circle)S).setCenterX(getValue(attr, "cx"));
+			((Circle)S).setCenterY(getValue(attr, "cy"));
+			((Circle)S).setRadius(getValue(attr, "r"));
 		
 		}
 		
 		if(S instanceof Ellipse) {
-			((Ellipse)S).setCenterX(getValue(s, "cx"));
-			((Ellipse)S).setCenterY(getValue(s, "cy"));
-			((Ellipse)S).setRadiusX(getValue(s, "rx"));
-			((Ellipse)S).setRadiusY(getValue(s, "ry"));			
+			
+			((Ellipse)S).setCenterX(getValue(attr, "cx"));
+			((Ellipse)S).setCenterY(getValue(attr, "cy"));
+			((Ellipse)S).setRadiusX(getValue(attr, "rx"));
+			((Ellipse)S).setRadiusY(getValue(attr, "ry"));			
 		}
 		
-		if(S instanceof Line) {			
-			((Line)S).setStartX(getValue(s, "x1"));
-			((Line)S).setStartY(getValue(s, "y1"));
-			((Line)S).setEndX(getValue(s, "x2"));
-			((Line)S).setEndY(getValue(s, "y1"));				
+		if(S instanceof Line) {	
+		
+			((Line)S).setStartX(getValue(attr, "x1"));
+			((Line)S).setStartY(getValue(attr, "y1"));
+			((Line)S).setEndX(getValue(attr, "x2"));
+			((Line)S).setEndY(getValue(attr, "y2"));				
 		}
 				
 		if(S instanceof Polyline) {				
-			((Polyline)S).getPoints().addAll(doubleArray(getString(s, "points")));					
+			((Polyline)S).getPoints().addAll(doubleArray(getString(attr, "points")));					
 		}
 		
 		if(S instanceof Polygon) {				
-			((Polygon)S).getPoints().addAll(doubleArray(getString(s, "points")));
+			((Polygon)S).getPoints().addAll(doubleArray(getString(attr, "points")));
 		}
 		
 		if(S instanceof SVGPath) {		
-			((SVGPath)S).setContent(svgPathContent(s));		
-			((SVGPath)S).setFillRule(getFillRule(s));			
+		
+			((SVGPath)S).setContent(svgPathContent(attr));		
+			((SVGPath)S).setFillRule(getFillRule(attr));
+			((SVGPath)S).setStrokeLineCap(getStrokeLineCap(attr));
+			((SVGPath)S).setStrokeLineJoin(getStrokeLineJoin(attr));
+			((SVGPath)S).setStrokeMiterLimit(getStrokeMiterLimit(attr));
+			
+		
 		}
+		
 		
 	
 		if(S instanceof Text) {		
 			
 			((Text)S).setText(getString(s, "text"));
-			((Text)S).setX(getValue(s, "x"));
-			((Text)S).setY(getValue(s, "y"));
+			((Text)S).setX(getValue(attr, "x"));
+			((Text)S).setY(getValue(attr, "y"));
 			
-			//SET-FONT
+			//SET-FONT CODE
 		}
-		//STYLE CODE FOR SHAPES
-		S.setStroke(getColor(s, "stroke"));	
 	
-		S.setFill(getColor(s, "fill"));
+		S.setStroke(getColor(attr, "stroke"));	
+	
+		S.setFill(getColor(attr, "fill"));
 				
-		S.setStrokeWidth(getValue(s, "stroke-width"));
+		S.setStrokeWidth(getValue(attr, "stroke-width"));
+		S.setOpacity(opacityValue(attr, "opacity"));
 		
-		//TRANSFORMATION CODES
-		//FILL-RULE CODES
+		String arr = getString(attr, "stroke-dasharray");
+		if(!arr.isEmpty())
+			S.getStrokeDashArray().addAll(doubleArray(arr));
+		
+		Transform trans = getTransform(attr);
+		if(trans != null)
+			S.getTransforms().add(trans);
+	
 				
 	}
 	/**
@@ -236,7 +265,7 @@ public class SVGParser {
 	@return double array with 6 elements (see JavaFX or SVG doc)
 	*/
 	public Double[] doubleArray(String s) {
-		
+	
 		return Arrays.stream(s.split("[\\s,]"))
 				.map(Double::valueOf)
                 .toArray(Double[]::new);
@@ -263,8 +292,7 @@ public class SVGParser {
 	*/
 	public double getValue(String s, String key) {
 			
-		String attr =  getAttributeString(s);
-		String valStr = getString(attr, key);	
+		String valStr = getString(s, key);	
 		if(!valStr.isEmpty())
 			return Double.parseDouble(valStr);
 		
@@ -292,12 +320,13 @@ public class SVGParser {
 				s = getString(s, "style")+";";
 			
 			int ind = s.indexOf(key+":");
-
+			
 			if(ind > -1) {
+				if(ind > 0 && s.charAt(ind-1) != ';' && s.charAt(ind-1) != ' ')
+					return "";
 				
 				index +=ind + 1;
 				return s.substring(index, s.indexOf(";", index));
-
 			}				
 				
 			return "";		
@@ -323,8 +352,8 @@ public class SVGParser {
 	@return Color JavaFX color of the given key
 	*/
 	public Color getColor(String s, String key) {
-		String str = getAttributeString(s);
-		String color = getString(str, key);
+		
+		String color = getString(s, key);
 		
 		SVGColor svgColor = new SVGColor();
 		if (color != null) {
@@ -352,7 +381,7 @@ public class SVGParser {
 	@return int the length of element-2-string
 	*/
 	public int svgObject(String[] S, String key, int index) {
-
+		
 		int start = S[0].indexOf("<"+key, index);	
 			
 		String rst = "";
@@ -374,25 +403,36 @@ public class SVGParser {
 							if(c > -1) {
 								close = c+key.length()+2;	
 							}
-							else
-								break;
-						}	
-						
+							else {
+								System.out.println("SVG file contains errors");
+								return close - start;
+								
+							}								
+						}						
 					}
 					else
 						break;						
 				}				
 			}			
-
+			
 			rst = S[0].substring(start, close).trim();				
 		}
 				
 		S[1]= rst;	
-//		System.out.println(rst + "End---Index: "+close+"---S[0]: "+ S[0]);
-		System.out.println(S[1] + "End---");
 		return rst.length();
 	}
-	//Thanh added
+
+	
+	
+	/**
+	search, parse and load the content of a path from the given string
+	@param s String, the parsing string
+	@return String the path content extracted from d="..........."
+	*/
+	public String svgPathContent(String s) {
+		return getString(s, "d");			
+	}	
+	/*------------------Thanh ADDED METHODS--------------------*/
 	private int isSelfClose(String s, int index) {
 		int close = s.indexOf(">", index);		
 		
@@ -405,20 +445,8 @@ public class SVGParser {
 		return -1;
 	}
 	
-	
-	/**
-	search, parse and load the content of a path from the given string
-	@param s String, the parsing string
-	@return String the path content extracted from d="..........."
-	*/
-	public String svgPathContent(String s) {
-		return getString(s, "d");	
-		
-	
-	}	
-	//Thanh added
-	protected String getContent(String s) {
-//		System.out.println(s + "End---");
+	protected String getContent(String s) { //Get content of a balanced tag
+
 		 int start = s.indexOf(">");
 		 int end = s.lastIndexOf("<");
 		 if(start > -1 && end > -1)
@@ -426,8 +454,8 @@ public class SVGParser {
 		 return s;
 	}	
 	
-	//Thanh added function (For flat svg structure)
-	protected List<String> getSvgObjectWithRegex(String s) {
+	
+	protected List<String> getSvgObjectWithRegex(String s) { // Get tag list (for flat svg structure)
 		List<String> obList = new ArrayList<String>();		
 					
 		String key = "((rect)|(circle)|(ellipse)|(line)|(polyline)|(polygon)|(path)|(svg)|(text))";
@@ -438,40 +466,108 @@ public class SVGParser {
 		while (matcher.find()) {
 			obList.add(matcher.group(0));
 	    }
-//		System.out.println(obList);
+
 		return obList;
 	}
 	
-	//Thanh added function 
-	protected String findKey(String s, int index) {
+
+	protected String findKey(String s, int index) { // Find near tag key
 		
-		String key = "((svg)|(rect)|(circle)|(ellipse)|(line)|(polyline)|(polygon)|(path)|(text))";
+		String key = "((svg)|(rect)|(circle)|(ellipse)|(line)|(polyline)|(polygon)|(path)|(text)|(g))";
 		Pattern K_REGEX = Pattern.compile(".{"+index+"}(<"+key+" )", Pattern.DOTALL);		
 		Matcher matcher = K_REGEX.matcher(s);	
 		
 		if(matcher.find()) {
 			String rs = matcher.group(0);
 			return rs.substring(rs.lastIndexOf("<")+1, rs.length()-1);
-
 		}
 			
 		return "";
 	}
 	
-	//Thanh added
-	public FillRule getFillRule(String s) {
-		String str = getAttributeString(s);
-		str = getString(str, "fill-rule");
-		if(str.equals("evenodd"))
+	private String getAttributeString(String s) { // Get all attribute string of a tag
+		return s.substring(s.indexOf("<"), s.indexOf(">"));
+	}
+	
+	public FillRule getFillRule(String s) { // Get fill rule attribute
+		
+		String valString = getString(s, "fill-rule");
+		if(valString.equals("evenodd"))
 			return FillRule.EVEN_ODD;
 		
 		return FillRule.NON_ZERO;
 	}
-	//Thanh added
-	private String getAttributeString(String s) {
-//		System.out.println("Input string: "+s);
-		return s.substring(s.indexOf("<"), s.indexOf(">"));
+	/**
+	* Search and parse stroke line cap
+	* @param s String parsing string	
+	* @return StrokeLineCap JavaFx Path stroke line cap
+	*/
+	public StrokeLineCap getStrokeLineCap(String s) { //
+		
+		s = getString(s, "stroke-linecap");
+		if(s.equals("round"))
+			return StrokeLineCap.ROUND;
+		else if(s.equals("square"))
+			return StrokeLineCap.SQUARE;
+	
+		return StrokeLineCap.BUTT;
 	}
+	/**
+	 * Search and parse stroke line join 
+	 * @param s String parsing string
+	 * @return StrokeLineJoin JavaFX Path stroke line join
+	 */
+	public StrokeLineJoin getStrokeLineJoin(String s) {
+	
+		s = getString(s, "stroke-linejoin");
+		
+		if(s.equals("miter"))
+			return StrokeLineJoin.MITER;
+		else if(s.equals("bevel"))
+			return StrokeLineJoin.BEVEL;
+		
+		return StrokeLineJoin.ROUND;
+	
+	}
+	/**
+	 * Search and parse stroke miter limit
+	 * @param s String parsing string
+	 * @return double stroke miter limit value
+	 */
+	public double getStrokeMiterLimit(String s) {
+		return getValue(s, "stroke-miterlimit");
+	}
+	
+	public Transform getTransform(String s) {
+
+		String trans = getString(s, "transform");
+		if(!trans.isEmpty()) {
+			
+			String arrStr =  trans.substring(trans.indexOf("(")+1, trans.indexOf(")")-1);
+			double [] arr =  Arrays.stream(arrStr.split("[\\s,]"))
+					 .mapToDouble(Double::parseDouble)
+					 .toArray();
+			int len = arr.length;
+			if(trans.indexOf("rotate") > -1) {
+				if(len == 1)
+					return new Rotate(arr[0]);
+				else if(len == 3)
+					return new Rotate(arr[0], arr[1], arr[2]);
+				else if(len == 4)
+					return new Rotate(arr[0], arr[1], arr[2], arr[3]);
+				
+			}
+			else if(trans.indexOf("matrix")>-1) {
+				if(len==6)
+					return new Affine(arr[0], arr[1], arr[2], arr[3], arr[4], arr[5]);
+			}
+			return null;
+		}
+		return null;
+	
+	}
+	
+	
 	
 	private String fileContent;			
 }

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="612pt" height="792pt" viewBox="0 0 612 792" version="1.1">
+<rect x="10" y="10" height="100" width="100"
+		style="stroke:#ff0000; fill: #0000ff"/>
+<circle cx="40" cy="40" r="24" style="stroke:#006600; fill:#00cc00"/>
+<path d="M 100 350 q 150 -300 300 0" stroke="blue"	stroke-width="5" fill="none" />
+<circle cx="50" cy="50" r="40" stroke="green" stroke-width="4" fill="yellow" />
+<rect width="300" height="100" style="fill:rgb(0,0,255);stroke-width:3;stroke:rgb(0,0,0)" />
+<rect x="50" y="20" width="150" height="150"
+  style="fill:blue;stroke:pink;stroke-width:5;fill-opacity:0.1;stroke-opacity:0.9" />
+	  
+<rect x="50" y="20" rx="20" ry="20" width="150" height="150"
+	  style="fill:red;stroke:black;stroke-width:5;opacity:0.5" />
+<ellipse cx="200" cy="80" rx="100" ry="50"
+	  style="fill:yellow;stroke:purple;stroke-width:2" />
+<line x1="0" y1="0" x2="200" y2="200" style="stroke:rgb(255,0,0);stroke-width:2" />
+<polygon points="200,10 250,190 160,210" style="fill:lime;stroke:purple;stroke-width:1" />
+<polyline points="20,20 40,25 60,40 80,120 120,140 200,180"
+	  style="fill:none;stroke:black;stroke-width:3" />
+ <path d="M150 0 L75 200 L225 200Z" style="fill:none;stroke-width:1;stroke-linecap:round;stroke-linejoin:round;stroke:rgb(0%,0%,0%);stroke-opacity:1;stroke-miterlimit:10;" />
+ 
+<path fill="none" stroke="black" stroke-width="4" stroke-dasharray="5,5" d="M5 20 l215 0" />
+<path fill="none" stroke="black" stroke-width="4" stroke-dasharray="10,10" d="M5 40 l215 0" />
+<path fill="none" stroke="black" stroke-width="4" stroke-dasharray="20,10,5,5,5,10" d="M5 60 l215 0" />
+ <text x="0" y="15" fill="red" transform="rotate(30 20,40)">I love SVG</text>
+</svg>
