@@ -359,12 +359,11 @@ public class SVGParser {
 							Group g1 = buildObject(cont);
 							
 							if(g1 != null) {
-								double x = getValue(S[1], "x");
-								double y = getValue(S[1], "y");
-								if(x != 0)
-									g1.setTranslateX(x);
-								if(y != 0)
-									g1.setTranslateY(y);
+								String s = getAttributeString(S[1]);
+								double x = getValue(s, "x");
+								double y = getValue(s, "y");								
+								g1.setTranslateX(x);							
+								g1.setTranslateY(y);
 								g.getChildren().add(g1);
 							}
 								
@@ -578,8 +577,6 @@ public class SVGParser {
 		return null;
 	
 	}
-	
-	
-	
+			
 	private String fileContent;			
 }

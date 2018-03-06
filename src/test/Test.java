@@ -18,7 +18,7 @@ public class Test extends Application {
 			Application.Parameters params = getParameters();
 	        java.util.List<String> pl = params.getRaw();
 	        SVGParser parser = null;
-	        if(pl== null)
+	        if(pl.isEmpty())
 	        	parser = new SVGParser("C:/SVG/src/test/test3.svg");
 	        else
 	        	parser = new SVGParser(pl.get(0));
