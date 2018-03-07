@@ -66,9 +66,10 @@ public class SVGParser {
 	@param s String, the parsing string (e.g. <circle .. style="...."/>)
 	*/
 	public void shape(Shape S, String s, String cas) { 
+		String attr = "";
 		
-		String attr = getAttributeString(s)+cas;
 		if(S instanceof Rectangle) {
+			attr = getAttributeString(s, "rect")+cas;
 			((Rectangle)S).setX(getValue(attr, "x"));
 			((Rectangle)S).setY(getValue(attr, "y"));
 			((Rectangle)S).setWidth(getValue(attr, "width"));		
@@ -79,6 +80,7 @@ public class SVGParser {
 		}
 		
 		if(S instanceof Circle) {
+			attr = getAttributeString(s, "circle")+cas;
 			((Circle)S).setCenterX(getValue(attr, "cx"));
 			((Circle)S).setCenterY(getValue(attr, "cy"));
 			((Circle)S).setRadius(getValue(attr, "r"));
@@ -86,7 +88,7 @@ public class SVGParser {
 		}
 		
 		if(S instanceof Ellipse) {
-			
+			attr = getAttributeString(s, "ellipse")+cas;
 			((Ellipse)S).setCenterX(getValue(attr, "cx"));
 			((Ellipse)S).setCenterY(getValue(attr, "cy"));
 			((Ellipse)S).setRadiusX(getValue(attr, "rx"));
@@ -94,23 +96,25 @@ public class SVGParser {
 		}
 		
 		if(S instanceof Line) {	
-		
+			attr = getAttributeString(s, "line")+cas;
 			((Line)S).setStartX(getValue(attr, "x1"));
 			((Line)S).setStartY(getValue(attr, "y1"));
 			((Line)S).setEndX(getValue(attr, "x2"));
 			((Line)S).setEndY(getValue(attr, "y2"));				
 		}
 				
-		if(S instanceof Polyline) {				
+		if(S instanceof Polyline) {	
+			attr = getAttributeString(s, "polyline")+cas;
 			((Polyline)S).getPoints().addAll(doubleArray(getString(attr, "points")));					
 		}
 		
-		if(S instanceof Polygon) {				
+		if(S instanceof Polygon) {
+			attr = getAttributeString(s, "polygon")+cas;
 			((Polygon)S).getPoints().addAll(doubleArray(getString(attr, "points")));
 		}
 		
 		if(S instanceof SVGPath) {		
-		
+			attr = getAttributeString(s, "path")+cas;
 			((SVGPath)S).setContent(svgPathContent(attr));		
 			((SVGPath)S).setFillRule(getFillRule(attr));
 			((SVGPath)S).setStrokeLineCap(getStrokeLineCap(attr));
@@ -121,7 +125,7 @@ public class SVGParser {
 				
 	
 		if(S instanceof Text) {		
-			
+			attr = getAttributeString(s, "text")+cas;
 			((Text)S).setText(getString(s, "text"));
 			((Text)S).setX(getValue(attr, "x"));
 			((Text)S).setY(getValue(attr, "y"));
@@ -136,8 +140,10 @@ public class SVGParser {
 		S.setStroke(getColor(attr, "stroke"));	
 	
 		S.setFill(getColor(attr, "fill"));
-				
-		S.setStrokeWidth(getValue(attr, "stroke-width"));
+		double sw = getValue(attr, "stroke-width");
+		if(!(sw > 0.0000001) )
+			sw = 1;
+		S.setStrokeWidth(sw);
 		S.setOpacity(opacityValue(attr, "opacity"));
 		
 		String arr = getString(attr, "stroke-dasharray");
@@ -331,6 +337,7 @@ public class SVGParser {
 	/**
 	* Search and parse string to Javafx objects
 	* @param s String parsing string	
+	* @param cas String svg object attribute to cascade style in nested structure
 	* @return Javafx Group group contains all parsed Javafx objects
 	*/
 	public Group buildObject(String content, String cas) {
@@ -355,18 +362,21 @@ public class SVGParser {
 
 						String cont = getContent(S[1]);
 						if(!cont.isEmpty()) {
-						
-							Group g1 = buildObject(cont, "");
+							String attr = getAttributeString(S[1], "svg");
+							double x = getValue(attr, "x");
+							double y = getValue(attr, "y");	
 							
-							if(g1 != null) {
-								String s = getAttributeString(S[1]);
-								double x = getValue(s, "x");
-								double y = getValue(s, "y");								
+							attr = attr.replaceAll("(x=\"[^\"]*\")|(y=\"[^\"]*\")|(width=\"[^\"]*\")|(height=\"[^\"]*\")", "");
+							//x, y, width, height are not style attributes
+						
+							Group g1 = buildObject(cont, attr);
+							
+							if(g1 != null) {				
+														
 								g1.setTranslateX(x);							
 								g1.setTranslateY(y);
 								list.add(g1);
-							}
-								
+							}								
 						}											
 					}
 					continue; 		
@@ -376,13 +386,12 @@ public class SVGParser {
 					strlen = svgObject(S, "g", index);
 					if(strlen > 0) {
 						index += strlen;	
-						String s = getAttributeString(S[1])+cas;
+						String s = getAttributeString(S[1], "g")+cas;
 						String cont = getContent(S[1]);
 						
 						if(!cont.isEmpty()) {
 						
-							Group g1 = buildObject(cont, s);
-							
+							Group g1 = buildObject(cont, s);							
 							if(g1 != null) {																
 								list.add(g1);
 							}								
@@ -506,8 +515,8 @@ public class SVGParser {
 		return "";
 	}
 	
-	private String getAttributeString(String s) { // Get all attribute string of a tag
-		return s.substring(s.indexOf("<"), s.indexOf(">"));
+	private String getAttributeString(String s, String key) { // Get all attribute string of a tag
+		return s.substring(s.indexOf("<")+key.length()+1, s.indexOf(">"));
 	}
 	
 	public FillRule getFillRule(String s) { // Get fill rule attribute
