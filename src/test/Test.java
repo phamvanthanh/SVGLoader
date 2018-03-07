@@ -20,7 +20,7 @@ public class Test extends Application {
 	        java.util.List<String> pl = params.getRaw();
 	        SVGParser parser = null;
 	        if(pl.isEmpty())
-	        	parser = new SVGParser("C:/SVG/src/test/test5.svg");
+	        	parser = new SVGParser("C:/SVG/src/test/test1.svg");
 	        else
 	        	parser = new SVGParser(pl.get(0));
 	        

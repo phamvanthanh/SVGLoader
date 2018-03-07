@@ -330,29 +330,16 @@ public class SVGParser {
 	 */
 		   
 	public Group getObject() {
-		String[] S = {fileContent, ""};	
-		String cas = ""; //Cascading style
 		
 		
 		
-//		String[] keyss = {"path","path","path","path","path","path","path","path","path","path","path","path"};
+
 		String[] keys = {"svg", "g", "rect", "polygon", "polyline", "line", "circle", "ellipse", "path", "text"};
-		StringBuffer[] bkeys = {new StringBuffer("svg"),
-                new StringBuffer("g"),
-                new StringBuffer("rect"),
-                new StringBuffer("polygon"),
-                new StringBuffer("polyline"),
-                new StringBuffer("line"),
-                new StringBuffer("circle"),
-                new StringBuffer("ellipse"),
-                new StringBuffer("path"),
-                new StringBuffer("text"),
-                
-                };
+	
 				
 		long start = System.nanoTime();
 //			List<String> list = listObjects(S, bkeys);		
-			List<String> list = getSvgObjectWithRegex(S[0]);
+			List<String> list = getSvgObjectWithRegex(fileContent);
 			/*
 		    Thread th = new Thread(new Runnable() {
 
@@ -369,10 +356,10 @@ public class SVGParser {
 //		for(String el: list) {
 //			System.out.println(el);
 //		}
-		
+//		System.out.println(list);
 		System.out.println("Number of object: "+list.size());
 		System.out.println("list time: "+(end-start));
-		return buildObject(S[0], cas);
+		return new Group(buildObjectList(list, ""));
 //		return new Group();
 	}
 	private List<String> listObjects(String[] S, StringBuffer[] keys) {
@@ -407,139 +394,57 @@ public class SVGParser {
 	* @param cas String svg object attribute to cascade style in nested structure
 	* @return Javafx Group group contains all parsed Javafx objects
 	*/
-	public  Group buildObject(String content, String cas) {
-
-		Group g = new Group();
-	    ObservableList<Node> list = g.getChildren();
-		if(!content.isEmpty()) {
-			String key = "";
-			int index = 0,  strlen = 0, length = content.length();
-			String[] S = {content, ""};
-			
-			while(index < length)
-			{
-				key = findKey(content, index);
-			
-				if(key.equals("svg") ) 
-				{
-					strlen = svgObject(S, new StringBuffer("svg"), index);
+	public List<Node> buildObjectList(List<String> list, String cas){
+		List<Node> oList = new ArrayList<Node>();
 		
-					if(strlen > 0) {
-						index += strlen;	
-
-						String cont = getContent(S[1]);
-						if(!cont.isEmpty()) {
-							Thread th = new Thread(new Runnable() {
-
-								@Override
-								public void run() {
-									String attr = getAttributeString(S[1], "svg");
-									double x = getValue(attr, "x");
-									double y = getValue(attr, "y");	
-									
-									attr = attr.replaceAll("(x=\"[^\"]*\")|(y=\"[^\"]*\")|(width=\"[^\"]*\")|(height=\"[^\"]*\")", "");
-									//x, y, width, height are not style attributes
-								     {
-								    	Group g1 = buildObject(cont, attr);
-										
-										if(g1 != null) {				
-																	
-											setCoordinates(g1, x, y);
-											addToList(list, g1);;
-										}	
-								    }
-									
-									
-								}
-								
-							});
-							th.start();
-							try {
-								th.join();
-							} catch (Exception e) {
-								// TODO Auto-generated catch block
-//								e.printStackTrace();
-							}
-														
-						}											
-					}
-					continue; 		
-						
-				}
-				else if(key.equals("g")) {
-					strlen = svgObject(S, new StringBuffer("g"), index);
-					index += strlen;
-					if(strlen > 0) {
-						Thread th1 = new Thread(new Runnable() {
-
-							@Override
-							public void run() {
-								String s = getAttributeString(S[1], "g")+cas;
-								String cont = getContent(S[1]);
-								
-								if(!cont.isEmpty()) {								
-									Group g2 = buildObject(cont, s);							
-									if(g2 != null) {																
-										 addToList(list, g2);
-									}								
-								}								
-							}							
-						});
-						th1.start();
-						try {
-							th1.join();
-						} catch (Exception e) {
-							// TODO Auto-generated catch block
-//							e.printStackTrace();
-						}																
-					}
-				}
-			
-				else if(!key.equals("svg") && !key.isEmpty())
-				{
-					 strlen = svgObject(S, new StringBuffer(key), index);
-					 index += strlen;				 
-					 if(strlen > 0) {
-						 Thread th2 = new Thread(new Runnable() {
-
-							@Override
-							public void run() {
-								Shape sh = buildShape(S[1], cas);
-								 if(sh!= null) {					
-									 addToList(list, sh);						
-								 }								
-							}
-							 
-						 });
-						 th2.start();
-						 try {
-								th2.join();
-							} catch (Exception e) {
-								// TODO Auto-generated catch block
-//								e.printStackTrace();
-							}
-						 
-					 }					 
-				 }				
-				 else {
-//					 System.out.printf("At break point Index: %d, Length: %d, S[0]: %s,\n S[1]: %s\n",index, length, S[0], S[1]);
-					 break; //IF NO MORE TAGS 
-				 }			
-			}
-			 return g;			
+		for(String el: list) {			
+			Node n = buildObject(el, cas);
+			if(n!=null)
+				oList.add(n);
 		}
-		return null;
-			
+		
+		return oList;
+	}
+	public  Node buildObject(String s, String cas) {
+		String key = findKey(s, 0); 
+		
+		if(key.equals("svg")) {
+			 
+			 String cont = getContent(s);
+			 if(!cont.isEmpty()) {
+				 String attr = getAttributeString(s, "svg");
+				 double x = getValue(attr, "x");
+				 double y = getValue(attr, "y");					
+				 attr = attr.replaceAll("(x=\"[^\"]*\")|(y=\"[^\"]*\")|(width=\"[^\"]*\")|(height=\"[^\"]*\")", "")+" "+cas;
+				 
+				 Group g = new Group();
+				 g.setTranslateX(x);
+				 g.setTranslateY(y);
+				 
+				 List<String> list = getSvgObjectWithRegex(cont); 
+				 g.getChildren().addAll(buildObjectList(list, attr));
+				 return g;
+			 }			 
+		 }
+		 else if(key.equals("g")) {
+			 String cont = getContent(s);
+			 if(!cont.isEmpty()) {
+				 System.out.println(getAttributeString(s, "g"));
+				 String attr = getAttributeString(s, "g")+" "+cas;									 
+				 Group g = new Group();				 
+				 List<String> list = getSvgObjectWithRegex(cont); 
+				 g.getChildren().addAll(buildObjectList(list, attr));
+				 return g;
+			 }		
+		 }
+		 else if(!key.equals("svg") && !key.isEmpty()) {			 
+			 return  buildShape(s, cas);
+		 }
+		 return null;
+					
 	}
 	
-	private  void addToList(ObservableList<Node> list, Node node) {
-		list.add(node);
-	}
-	private  void setCoordinates(Group g, double x, double y) {
-		g.setTranslateX(x);
-		g.setTranslateY(y);
-	}
-	
+
 	public Shape buildShape(String s, String cas) {
 		Shape sh = null;
 
@@ -605,8 +510,8 @@ public class SVGParser {
 	protected List<String> getSvgObjectWithRegex(String s) { // Get tag list (for flat svg structure)
 		List<String> obList = new ArrayList<String>();		
 					
-		Pattern O_REGEX = Pattern.compile("(<("+key+")[^<(/>)>]*>[^<>]*?(<\\2[^<>]*>([^<>]*?(\n))*[^<>]*?</\\2>)*[^<>]*?(</\\2>))|(<"+key+"[^<>]*/>)");
-		Pattern O1_REGEX = Pattern.compile("(<("+key+")[^<(/>)>]*>.*?(</\\2>))|(<"+key+"[^<>]*/>)");
+		Pattern O_REGEX = Pattern.compile("(<("+gkey+")[^<(/>)>]*>[^<>]*?(<\\2[^<>]*>([^<>]*?(\n))*[^<>]*?</\\2>)*[^<>]*?(</\\2>))|(<"+gkey+"[^<>]*/>)");
+		Pattern O1_REGEX = Pattern.compile("(<("+gkey+")[^<(/>)>]*>.*?(</\\2>))|(<"+gkey+"[^<>]*/>)");
 	    Matcher matcher = O1_REGEX.matcher(s);	
 	
 		while (matcher.find()) {
@@ -619,11 +524,11 @@ public class SVGParser {
 
 	protected String findKey(String s, int index) { // Find near tag key		
 		
-		Pattern K_REGEX = Pattern.compile(".{"+index+"}(<"+key+" )", Pattern.DOTALL);		
+		Pattern K_REGEX = Pattern.compile(".{"+index+"}(<"+gkey+" ?)", Pattern.DOTALL);		
 		Matcher matcher = K_REGEX.matcher(s);	
 		
 		if(matcher.find()) {
-			String rs = matcher.group(0);
+			String rs = matcher.group(0);			
 			return rs.substring(rs.lastIndexOf("<")+1, rs.length()-1);
 		}
 			
@@ -631,7 +536,8 @@ public class SVGParser {
 	}
 	
 	private String getAttributeString(String s, String key) { // Get all attribute string of a tag
-		return s.substring(s.indexOf("<")+key.length()+1, s.indexOf(">"));
+		
+		return s.substring(s.indexOf("<")+key.length(), s.indexOf(">"));
 	}
 	
 	public FillRule getFillRule(String s) { // Get fill rule attribute
@@ -716,5 +622,5 @@ public class SVGParser {
 	}
 			
 	private String fileContent;			
-	private String key = "((svg)|(rect)|(circle)|(ellipse)|(line)|(polyline)|(polygon)|(path)|(text)|(g))";
+	private String gkey = "((svg)|(g)|(rect)|(circle)|(ellipse)|(line)|(polyline)|(polygon)|(path)|(text))";
 }
