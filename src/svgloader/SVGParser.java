@@ -9,7 +9,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
-import javafx.collections.ObservableList;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.paint.Color;
@@ -126,6 +125,7 @@ public class SVGParser {
 	
 		if(S instanceof Text) {		
 			attr = getAttributeString(s, "text")+cas;
+//			System.out.println("Text: "+ s);
 			((Text)S).setText(getString(s, "text"));
 			((Text)S).setX(getValue(attr, "x"));
 			((Text)S).setY(getValue(attr, "y"));
@@ -329,65 +329,15 @@ public class SVGParser {
 	 * Return Group contains all SVG object
 	 */
 		   
-	public Group getObject() {
+	public List<Node> getObject() {
 		
 		
-		
-
-		String[] keys = {"svg", "g", "rect", "polygon", "polyline", "line", "circle", "ellipse", "path", "text"};
+		List<String> list = getSvgObjectWithRegex(fileContent);
 	
-				
-		long start = System.nanoTime();
-//			List<String> list = listObjects(S, bkeys);		
-			List<String> list = getSvgObjectWithRegex(fileContent);
-			/*
-		    Thread th = new Thread(new Runnable() {
+		return buildObjectList(list, "");
 
-				@Override
-				public void run() {
-					// TODO Auto-generated method stub
-					
-				}
-				
-			});
-			th.start();*/
-//			th.join();
-		long end = System.nanoTime();
-//		for(String el: list) {
-//			System.out.println(el);
-//		}
-//		System.out.println(list);
-		System.out.println("Number of object: "+list.size());
-		System.out.println("list time: "+(end-start));
-		return new Group(buildObjectList(list, ""));
-//		return new Group();
 	}
-	private List<String> listObjects(String[] S, StringBuffer[] keys) {
-		List<String> list = new ArrayList<String>();
-		int index = 0, i = 0, strlen = 0, length = S[0].length();
-		int klength = keys.length;
-		int count = 0;
-		
-		while(index < length)
-		{
-			count = 0;
-			for(i=0; i < klength; i++) {
-				strlen = svgObject(S, keys[i], index);
-				if(strlen > 0) {
-					index += strlen;
-					count += strlen;
-					list.add(S[1]);
-				}	
-				
-				
-			}
-//			System.out.printf("Count: %d, Index: %d, Length: %d\n",count, index, length);
-			if(count == 0)
-				return list;			
-		
-		}
-		return list;
-	}
+	
 	/**
 	* Search and parse string to Javafx objects
 	* @param s String parsing string	
@@ -428,11 +378,13 @@ public class SVGParser {
 		 }
 		 else if(key.equals("g")) {
 			 String cont = getContent(s);
+
 			 if(!cont.isEmpty()) {
-				 System.out.println(getAttributeString(s, "g"));
-				 String attr = getAttributeString(s, "g")+" "+cas;									 
+				
+				 String attr = getAttributeString(s, "g")+" "+cas;
 				 Group g = new Group();				 
-				 List<String> list = getSvgObjectWithRegex(cont); 
+				 List<String> list = getSvgObjectWithRegex(cont);
+				 
 				 g.getChildren().addAll(buildObjectList(list, attr));
 				 return g;
 			 }		
@@ -473,7 +425,8 @@ public class SVGParser {
 			shape(sh, s, cas);
 		}
 	
-		if(s.indexOf("<path") > -1) {			
+		if(s.indexOf("<path") > -1) {		
+//			System.out.println(cas);
 			sh = new SVGPath();
 			shape(sh, s, cas);
 		}
@@ -508,10 +461,9 @@ public class SVGParser {
 	
 	//THIS FUNCTION MAY USE FOR FLAT SVG STRUCTURE
 	protected List<String> getSvgObjectWithRegex(String s) { // Get tag list (for flat svg structure)
-		List<String> obList = new ArrayList<String>();		
-					
-		Pattern O_REGEX = Pattern.compile("(<("+gkey+")[^<(/>)>]*>[^<>]*?(<\\2[^<>]*>([^<>]*?(\n))*[^<>]*?</\\2>)*[^<>]*?(</\\2>))|(<"+gkey+"[^<>]*/>)");
-		Pattern O1_REGEX = Pattern.compile("(<("+gkey+")[^<(/>)>]*>.*?(</\\2>))|(<"+gkey+"[^<>]*/>)");
+		List<String> obList = new ArrayList<String>();						
+
+		Pattern O1_REGEX = Pattern.compile("(<("+gkey+")[^<(/>)>]*(\\(.*\\))*[^<(/>)>]*>.*?(</\\2>))|(<"+gkey+"[^<>]*/>)");
 	    Matcher matcher = O1_REGEX.matcher(s);	
 	
 		while (matcher.find()) {
@@ -522,14 +474,14 @@ public class SVGParser {
 	}
 	
 
-	protected String findKey(String s, int index) { // Find near tag key		
+	protected String findKey(String s, int index) { // Find nearest tag key		
 		
-		Pattern K_REGEX = Pattern.compile(".{"+index+"}(<"+gkey+" ?)", Pattern.DOTALL);		
+		Pattern K_REGEX = Pattern.compile(".{"+index+"}(<"+gkey+")", Pattern.DOTALL);		
 		Matcher matcher = K_REGEX.matcher(s);	
 		
 		if(matcher.find()) {
-			String rs = matcher.group(0);			
-			return rs.substring(rs.lastIndexOf("<")+1, rs.length()-1);
+			String rs = matcher.group(0);	
+			return rs.replace("<", "");
 		}
 			
 		return "";
@@ -537,7 +489,9 @@ public class SVGParser {
 	
 	private String getAttributeString(String s, String key) { // Get all attribute string of a tag
 		
-		return s.substring(s.indexOf("<")+key.length(), s.indexOf(">"));
+		String ss =  s.substring(s.indexOf("<")+key.length()+1, s.indexOf(">"));
+//		System.out.printf("String: %s\n, key: %s, result: %s\n", s, key, ss);
+		return ss;
 	}
 	
 	public FillRule getFillRule(String s) { // Get fill rule attribute

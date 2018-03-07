@@ -1,5 +1,7 @@
 package test;
 	
+import java.util.List;
+
 import javafx.application.Application;
 
 import javafx.stage.Stage;
@@ -25,12 +27,12 @@ public class Test extends Application {
 	        	parser = new SVGParser(pl.get(0));
 	        
 			long start = System.currentTimeMillis();
-			Node g = parser.getObject();	
+			List<Node> list = parser.getObject();	
 			long end = System.currentTimeMillis();
 			System.out.println("Time build: "+(end-start));
 			
 			Pane  pane = new Pane();
-			pane.getChildren().addAll(g);
+			pane.getChildren().addAll(list);
 			
 			Parent root = new Pane(pane);												
 			Scene scene = new Scene(root);			
