@@ -9,7 +9,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
+import javafx.collections.ObservableList;
 import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Ellipse;
@@ -62,9 +64,9 @@ public class SVGParser {
 	@param S JFX-Shape (Rectangle, Ellipse, Circle, etc.)
 	@param s String, the parsing string (e.g. <circle .. style="...."/>)
 	*/
-	public void shape(Shape S, String s) { 
+	public void shape(Shape S, String s, String cas) { 
 		
-		String attr = getAttributeString(s);
+		String attr = getAttributeString(s)+cas;
 		if(S instanceof Rectangle) {
 			((Rectangle)S).setX(getValue(attr, "x"));
 			((Rectangle)S).setY(getValue(attr, "y"));
@@ -318,16 +320,18 @@ public class SVGParser {
 		   
 	public Group getObject() {
 		String[] S = {fileContent, ""};	
-		return buildObject(S[0]);
+		String cas = "";
+		return buildObject(S[0], cas);
 	}
 	/**
 	* Search and parse string to Javafx objects
 	* @param s String parsing string	
 	* @return Javafx Group group contains all parsed Javafx objects
 	*/
-	public Group buildObject(String content) {
+	public Group buildObject(String content, String cas) {
 
 		Group g = new Group();
+		ObservableList<Node> list = g.getChildren();
 		if(!content.isEmpty()) {
 			String key = "";
 			int index = 0,  strlen = 0, length = content.length();
@@ -347,7 +351,7 @@ public class SVGParser {
 						String cont = getContent(S[1]);
 						if(!cont.isEmpty()) {
 						
-							Group g1 = buildObject(cont);
+							Group g1 = buildObject(cont, "");
 							
 							if(g1 != null) {
 								String s = getAttributeString(S[1]);
@@ -355,7 +359,7 @@ public class SVGParser {
 								double y = getValue(s, "y");								
 								g1.setTranslateX(x);							
 								g1.setTranslateY(y);
-								g.getChildren().add(g1);
+								list.add(g1);
 							}
 								
 						}											
@@ -364,10 +368,21 @@ public class SVGParser {
 						
 				}
 				else if(key.equals("g")) {
-					strlen = svgObject(S, key, index);
-					String s = getAttributeString(S[1]);
-					String cont = getContent(S[1]);
-					//TO BE CONTINUED
+					strlen = svgObject(S, "g", index);
+					if(strlen > 0) {
+						index += strlen;	
+						String s = getAttributeString(S[1])+cas;
+						String cont = getContent(S[1]);
+						
+						if(!cont.isEmpty()) {
+						
+							Group g1 = buildObject(cont, s);
+							
+							if(g1 != null) {																
+								list.add(g1);
+							}								
+						}											
+					}
 				}
 			
 				else if(!key.equals("svg") && !key.isEmpty())
@@ -376,19 +391,16 @@ public class SVGParser {
 					 					 
 					 if(strlen > 0) {
 						 index += strlen;
-						 Shape sh = buildShape(S[1]);
+						 Shape sh = buildShape(S[1], cas);
 						 if(sh!= null) {					
-							g.getChildren().add(sh);
-						
+							list.add(sh);						
 						 }
 					 }					 
 				 }				
 				 else {
 //					 System.out.printf("At break point Index: %d, Length: %d, S[0]: %s,\n S[1]: %s\n",index, length, S[0], S[1]);
 					 break; //IF NO MORE TAGS 
-				 }
-				
-				
+				 }			
 			}
 			 return g;			
 		}
@@ -397,41 +409,41 @@ public class SVGParser {
 	}
 	
 	
-	public Shape buildShape(String s) {
+	public Shape buildShape(String s, String cas) {
 		Shape sh = null;
 
 		if(s.indexOf("<rect") > -1) {
 			sh = new Rectangle();			
-			shape(sh, s);			
+			shape(sh, s, cas);			
 		}
 		if(s.indexOf("<circle") > -1) {
 			sh = new Circle();
-			shape(sh, s);
+			shape(sh, s, cas);
 		}
 		if(s.indexOf("<ellipse") > -1) {
 			sh = new Ellipse();
-			shape(sh, s);
+			shape(sh, s, cas);
 		}
 		if(s.indexOf("<line") > -1) {
 			sh = new Line();
-			shape(sh, s);
+			shape(sh, s, cas);
 		}
 		if(s.indexOf("<polyline") > -1) {
 			sh = new Polyline();
-			shape(sh, s);
+			shape(sh, s, cas);
 		}
 		if(s.indexOf("<polygon") > -1) {
 			sh = new Polygon();
-			shape(sh, s);
+			shape(sh, s, cas);
 		}
 	
 		if(s.indexOf("<path") > -1) {			
 			sh = new SVGPath();
-			shape(sh, s);
+			shape(sh, s, cas);
 		}
 		if(s.indexOf("<text") > -1) {		
 			sh = new Text();
-			shape(sh, s);
+			shape(sh, s, cas);
 		}
 		return sh;
 		
