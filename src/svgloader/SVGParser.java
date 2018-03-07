@@ -24,6 +24,7 @@ import javafx.scene.shape.SVGPath;
 import javafx.scene.shape.Shape;
 import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.shape.StrokeLineJoin;
+import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.transform.Affine;
 import javafx.scene.transform.Rotate;
@@ -124,8 +125,12 @@ public class SVGParser {
 			((Text)S).setText(getString(s, "text"));
 			((Text)S).setX(getValue(attr, "x"));
 			((Text)S).setY(getValue(attr, "y"));
-			
-			//SET-FONT CODE
+			double fz = getValue(attr, "font-size");
+			if(!(fz > 0.0001))
+				fz = 14; // Default font size
+	
+			((Text)S).setFont(Font.font(getString(attr, "font-family"), fz));
+	
 		}
 	
 		S.setStroke(getColor(attr, "stroke"));	
@@ -320,7 +325,7 @@ public class SVGParser {
 		   
 	public Group getObject() {
 		String[] S = {fileContent, ""};	
-		String cas = "";
+		String cas = ""; //Cascading style
 		return buildObject(S[0], cas);
 	}
 	/**
