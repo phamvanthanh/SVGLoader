@@ -9,7 +9,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
+import javafx.collections.ObservableList;
 import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Ellipse;
@@ -22,6 +24,7 @@ import javafx.scene.shape.SVGPath;
 import javafx.scene.shape.Shape;
 import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.shape.StrokeLineJoin;
+import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.transform.Affine;
 import javafx.scene.transform.Rotate;
@@ -62,10 +65,11 @@ public class SVGParser {
 	@param S JFX-Shape (Rectangle, Ellipse, Circle, etc.)
 	@param s String, the parsing string (e.g. <circle .. style="...."/>)
 	*/
-	public void shape(Shape S, String s) { 
+	public void shape(Shape S, String s, String cas) { 
+		String attr = "";
 		
-		String attr = getAttributeString(s);
 		if(S instanceof Rectangle) {
+			attr = getAttributeString(s, "rect")+cas;
 			((Rectangle)S).setX(getValue(attr, "x"));
 			((Rectangle)S).setY(getValue(attr, "y"));
 			((Rectangle)S).setWidth(getValue(attr, "width"));		
@@ -76,6 +80,7 @@ public class SVGParser {
 		}
 		
 		if(S instanceof Circle) {
+			attr = getAttributeString(s, "circle")+cas;
 			((Circle)S).setCenterX(getValue(attr, "cx"));
 			((Circle)S).setCenterY(getValue(attr, "cy"));
 			((Circle)S).setRadius(getValue(attr, "r"));
@@ -83,7 +88,7 @@ public class SVGParser {
 		}
 		
 		if(S instanceof Ellipse) {
-			
+			attr = getAttributeString(s, "ellipse")+cas;
 			((Ellipse)S).setCenterX(getValue(attr, "cx"));
 			((Ellipse)S).setCenterY(getValue(attr, "cy"));
 			((Ellipse)S).setRadiusX(getValue(attr, "rx"));
@@ -91,23 +96,25 @@ public class SVGParser {
 		}
 		
 		if(S instanceof Line) {	
-		
+			attr = getAttributeString(s, "line")+cas;
 			((Line)S).setStartX(getValue(attr, "x1"));
 			((Line)S).setStartY(getValue(attr, "y1"));
 			((Line)S).setEndX(getValue(attr, "x2"));
 			((Line)S).setEndY(getValue(attr, "y2"));				
 		}
 				
-		if(S instanceof Polyline) {				
+		if(S instanceof Polyline) {	
+			attr = getAttributeString(s, "polyline")+cas;
 			((Polyline)S).getPoints().addAll(doubleArray(getString(attr, "points")));					
 		}
 		
-		if(S instanceof Polygon) {				
+		if(S instanceof Polygon) {
+			attr = getAttributeString(s, "polygon")+cas;
 			((Polygon)S).getPoints().addAll(doubleArray(getString(attr, "points")));
 		}
 		
 		if(S instanceof SVGPath) {		
-		
+			attr = getAttributeString(s, "path")+cas;
 			((SVGPath)S).setContent(svgPathContent(attr));		
 			((SVGPath)S).setFillRule(getFillRule(attr));
 			((SVGPath)S).setStrokeLineCap(getStrokeLineCap(attr));
@@ -118,19 +125,25 @@ public class SVGParser {
 				
 	
 		if(S instanceof Text) {		
-			
+			attr = getAttributeString(s, "text")+cas;
 			((Text)S).setText(getString(s, "text"));
 			((Text)S).setX(getValue(attr, "x"));
 			((Text)S).setY(getValue(attr, "y"));
-			
-			//SET-FONT CODE
+			double fz = getValue(attr, "font-size");
+			if(!(fz > 0.0001))
+				fz = 14; // Default font size
+	
+			((Text)S).setFont(Font.font(getString(attr, "font-family"), fz));
+	
 		}
 	
 		S.setStroke(getColor(attr, "stroke"));	
 	
 		S.setFill(getColor(attr, "fill"));
-				
-		S.setStrokeWidth(getValue(attr, "stroke-width"));
+		double sw = getValue(attr, "stroke-width");
+		if(!(sw > 0.0000001) )
+			sw = 1;
+		S.setStrokeWidth(sw);
 		S.setOpacity(opacityValue(attr, "opacity"));
 		
 		String arr = getString(attr, "stroke-dasharray");
@@ -318,16 +331,19 @@ public class SVGParser {
 		   
 	public Group getObject() {
 		String[] S = {fileContent, ""};	
-		return buildObject(S[0]);
+		String cas = ""; //Cascading style
+		return buildObject(S[0], cas);
 	}
 	/**
 	* Search and parse string to Javafx objects
 	* @param s String parsing string	
+	* @param cas String svg object attribute to cascade style in nested structure
 	* @return Javafx Group group contains all parsed Javafx objects
 	*/
-	public Group buildObject(String content) {
+	public Group buildObject(String content, String cas) {
 
 		Group g = new Group();
+		ObservableList<Node> list = g.getChildren();
 		if(!content.isEmpty()) {
 			String key = "";
 			int index = 0,  strlen = 0, length = content.length();
@@ -346,28 +362,41 @@ public class SVGParser {
 
 						String cont = getContent(S[1]);
 						if(!cont.isEmpty()) {
-						
-							Group g1 = buildObject(cont);
+							String attr = getAttributeString(S[1], "svg");
+							double x = getValue(attr, "x");
+							double y = getValue(attr, "y");	
 							
-							if(g1 != null) {
-								String s = getAttributeString(S[1]);
-								double x = getValue(s, "x");
-								double y = getValue(s, "y");								
+							attr = attr.replaceAll("(x=\"[^\"]*\")|(y=\"[^\"]*\")|(width=\"[^\"]*\")|(height=\"[^\"]*\")", "");
+							//x, y, width, height are not style attributes
+						
+							Group g1 = buildObject(cont, attr);
+							
+							if(g1 != null) {				
+														
 								g1.setTranslateX(x);							
 								g1.setTranslateY(y);
-								g.getChildren().add(g1);
-							}
-								
+								list.add(g1);
+							}								
 						}											
 					}
 					continue; 		
 						
 				}
 				else if(key.equals("g")) {
-					strlen = svgObject(S, key, index);
-					String s = getAttributeString(S[1]);
-					String cont = getContent(S[1]);
-					//TO BE CONTINUED
+					strlen = svgObject(S, "g", index);
+					if(strlen > 0) {
+						index += strlen;	
+						String s = getAttributeString(S[1], "g")+cas;
+						String cont = getContent(S[1]);
+						
+						if(!cont.isEmpty()) {
+						
+							Group g1 = buildObject(cont, s);							
+							if(g1 != null) {																
+								list.add(g1);
+							}								
+						}											
+					}
 				}
 			
 				else if(!key.equals("svg") && !key.isEmpty())
@@ -376,19 +405,16 @@ public class SVGParser {
 					 					 
 					 if(strlen > 0) {
 						 index += strlen;
-						 Shape sh = buildShape(S[1]);
+						 Shape sh = buildShape(S[1], cas);
 						 if(sh!= null) {					
-							g.getChildren().add(sh);
-						
+							list.add(sh);						
 						 }
 					 }					 
 				 }				
 				 else {
 //					 System.out.printf("At break point Index: %d, Length: %d, S[0]: %s,\n S[1]: %s\n",index, length, S[0], S[1]);
 					 break; //IF NO MORE TAGS 
-				 }
-				
-				
+				 }			
 			}
 			 return g;			
 		}
@@ -397,41 +423,41 @@ public class SVGParser {
 	}
 	
 	
-	public Shape buildShape(String s) {
+	public Shape buildShape(String s, String cas) {
 		Shape sh = null;
 
 		if(s.indexOf("<rect") > -1) {
 			sh = new Rectangle();			
-			shape(sh, s);			
+			shape(sh, s, cas);			
 		}
 		if(s.indexOf("<circle") > -1) {
 			sh = new Circle();
-			shape(sh, s);
+			shape(sh, s, cas);
 		}
 		if(s.indexOf("<ellipse") > -1) {
 			sh = new Ellipse();
-			shape(sh, s);
+			shape(sh, s, cas);
 		}
 		if(s.indexOf("<line") > -1) {
 			sh = new Line();
-			shape(sh, s);
+			shape(sh, s, cas);
 		}
 		if(s.indexOf("<polyline") > -1) {
 			sh = new Polyline();
-			shape(sh, s);
+			shape(sh, s, cas);
 		}
 		if(s.indexOf("<polygon") > -1) {
 			sh = new Polygon();
-			shape(sh, s);
+			shape(sh, s, cas);
 		}
 	
 		if(s.indexOf("<path") > -1) {			
 			sh = new SVGPath();
-			shape(sh, s);
+			shape(sh, s, cas);
 		}
 		if(s.indexOf("<text") > -1) {		
 			sh = new Text();
-			shape(sh, s);
+			shape(sh, s, cas);
 		}
 		return sh;
 		
@@ -489,8 +515,8 @@ public class SVGParser {
 		return "";
 	}
 	
-	private String getAttributeString(String s) { // Get all attribute string of a tag
-		return s.substring(s.indexOf("<"), s.indexOf(">"));
+	private String getAttributeString(String s, String key) { // Get all attribute string of a tag
+		return s.substring(s.indexOf("<")+key.length()+1, s.indexOf(">"));
 	}
 	
 	public FillRule getFillRule(String s) { // Get fill rule attribute
