@@ -52,46 +52,73 @@ public class SVGParser {
 	*/
 	public void shape(Shape S, String s) {
 		S.setFill(getColor(s,"fill"));
-		S.setLayoutX(getValue(s,"x"));
-		S.setLayoutY(getValue(s,"y"));
-		S.setOpacity(getValue(s,"opacity"));
+		S.setStroke(getColor(s,"stroke"));
+		S.setStrokeWidth(getValue(s,"stroke-width"));
+		S.setOpacity(opacityValue(s,"opacity"));
 		S.setStyle(getString(s,"style"));
 		
 		String tagName=s.substring(s.indexOf('<')+1,s.indexOf(' '));
 		switch(tagName){
+		
 		case "rect":
 			Rectangle rect=(Rectangle)S;
+			rect.setX(getValue(s,"x"));
+			rect.setY(getValue(s,"y"));
+			rect.setWidth(getValue(s,"width"));
+			rect.setHeight(getValue(s,"height"));
+			rect.setArcWidth(getValue(s,"rx"));
+			rect.setArcHeight(getValue(s,"ry"));
 			break;
+			
 		case "circle":
 			Circle circle=(Circle)S;
+			circle.setRadius(getValue(s,"r"));
+			circle.setCenterX(getValue(s,"cx"));
+			circle.setCenterY(getValue(s,"cy"));
 			break;
+			
 		case "text":
 			Text text=(Text)S;
+			text.setText(getTagContent(s));
+			text.setX(getValue(s,"x"));
+			text.setY(getValue(s,"y"));
 			break;
+			
 		case "ellipse":
-			Ellipse elp=(Ellipse)S;
+			Ellipse ellipse=(Ellipse)S;
+			ellipse.setCenterX(getValue(s,"cx"));
+			ellipse.setCenterY(getValue(s,"cy"));
+			ellipse.setRadiusX(getValue(s,"rx"));
+			ellipse.setRadiusY(getValue(s,"ry"));
 			break;
+			
 		case "polyline":
-			Polyline plLine=(Polyline)S;
+			((Polyline)S).getPoints().addAll(doubleArray(s));
 			break;
+			
 		case "polygon":
-			Polygon plGon=(Polygon)S;
+			((Polygon)S).getPoints().addAll(doubleArray(s));
 			break;
+			
 		case "line":
 			Line line=(Line)S;
+			line.setStartX(getValue(s,"x1"));
+			line.setEndX(getValue(s,"x2"));
+			line.setStartY(getValue(s,"y1"));
+			line.setEndY(getValue(s,"y2"));
 			break;
 		}
-		return;
 	}
 	/**
 	search and parse double array for Polyline and Polygon
 	@param s String, the parsing string
 	@return double array with 6 elements (see JavaFX or SVG doc)
 	*/
-	public double[] doubleArray(String s) {
+	public Double[] doubleArray(String s) {
 		String[] parsedPoints=getString(s,"points").split("\\s");
-		double[] pointsValue=new double[6];
-		for(int i=0;i<parsedPoints.length;++i)
+		int numberOfPoint=parsedPoints.length;
+		Double[] pointsValue=new Double[(numberOfPoint>6)?numberOfPoint:6];
+		for(int i=0;i<numberOfPoint;++i)
 			pointsValue[i]=Double.parseDouble(parsedPoints[i]);
 		return pointsValue;
 	}
@@ -118,18 +145,10 @@ public class SVGParser {
 	*/
 	public double getValue(String s, String key) {
 		String value=getString(s,key);
-		switch(key){
-		case "x":
-		case "y":
-		case "width":
-		case "height":
-		case "stroke-width":
-			if(value.endsWith("cm"))
-				return Double.parseDouble(value.substring(0,value.length()-2))*38.5;//Change to pixel
-			return Double.parseDouble(value)*0.385;
-			
-		}
-		return Double.parseDouble(value);
+		
+		if(value.endsWith("cm"))
+			return Double.parseDouble(value.substring(0,value.length()-2))*38.5;//Change to pixel
+		return Double.parseDouble(value)*0.385;
 	}
 	
 	private String getAttribute(String s,String key){//TODO: is case sensitive?
@@ -204,7 +223,7 @@ public class SVGParser {
 	@param key String the designated key (e.g. key fill-opacity -> <rect...fill-opacity="0.5".../>)
 	@return double opacity value of JavaFX color of the given key*/
 	public double opacityValue(String s, String key) {
-		return getValue(s,key);
+		return Double.parseDouble(getString(s,key));
 		
 	}
 	
@@ -228,5 +247,13 @@ public class SVGParser {
 	public String svgPathContent(String s) {
 		return getString(s,"d");
 		
+	}
+	/**
+	 * parse the content between the tag
+	 * @param s String, the parsing string (ex:<text ...  /text>)
+	 * @return the string the tag contains
+	 */
+	public String getTagContent(String s){
+		return s.substring(s.indexOf('>')+1,s.lastIndexOf('<')).trim();
 	}
 }
