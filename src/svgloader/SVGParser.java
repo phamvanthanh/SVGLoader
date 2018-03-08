@@ -458,12 +458,12 @@ public class SVGParser {
 	protected List<String> getSvgObjectWithRegex(String s) { // Get tag list (for flat svg structure)
 		List<String> obList = new ArrayList<String>();						
 
-		Pattern O1_REGEX = Pattern.compile("(<("+gkey+")[^<(/>)>]*(\\(.*\\))*[^<(/>)>]*>.*?(</\\2>))|(<"+gkey+"[^<>]*(\\(.*\\))*[^<(/>)>]*/>)");
+		Pattern O1_REGEX = Pattern.compile("(<("+gkey+")[^<(/>)>]*(\\(.*\\))*[^<(/>)>]*>.*?(\\1*).+?(</\\2>))|(<"+gkey+"[^<>]*(\\(.*\\))*[^<(/>)>]*/>)");
 	    Matcher matcher = O1_REGEX.matcher(s);	
 	
 		while (matcher.find()) {
 			obList.add(matcher.group(0));
-			
+			System.out.println(matcher.group(0));
 	    }
 		
 		return obList;
