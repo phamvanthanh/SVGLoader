@@ -272,10 +272,10 @@ public class SVGParser {
 	@param key String the designated key (e.g. key rect -> <rect...fill-opacity="0.5".../>)
 	@return int the length of element-2-string
 	*/
-	public int svgObject(String[] S, StringBuffer key, int index) {
+	public int svgObject(String[] S, String key, int index) {
 		
-		int start = S[0].indexOf("<"+key, index);	
-			
+		int start = S[0].indexOf("<"+key, index);
+		
 		String rst = "";
 		if(start > -1) {	
 			int close = isSelfClose(S[0], start);
@@ -305,11 +305,16 @@ public class SVGParser {
 						break;						
 				}				
 			}			
-			
+
+				
 			rst = S[0].substring(start, close).trim();				
 		}
 				
 		S[1]= rst;	
+		/*
+		System.out.println("index: "+index+", Key: "+key+", String: "+S[0]);	
+		System.out.println("S[1]: "+S[1]);
+		System.out.println("\n");*/
 		return rst.length();
 	}
 
@@ -329,7 +334,7 @@ public class SVGParser {
 	 */
 		   
 	public List<Node> getObject() {		
-		List<String> list = getSvgObjectWithRegex(fileContent);	
+		List<String> list = listObjects(fileContent);
 		return buildObjectList(list, "");
 	}
 	
@@ -347,7 +352,7 @@ public class SVGParser {
 			if(n!=null)
 				oList.add(n);
 		}
-		
+
 		return oList;
 	}
 	public  Node buildObject(String s, String cas) {
@@ -366,7 +371,12 @@ public class SVGParser {
 				 g.setTranslateX(x);
 				 g.setTranslateY(y);
 				 
-				 List<String> list = getSvgObjectWithRegex(cont); 
+				 List<String> list;
+				 if(cont.indexOf("svg") > -1 || cont.indexOf("g") > -1) 
+					list = listObjects(cont);						 
+				 else
+				  	 list = regexListObjects(cont); 
+				 
 				 g.getChildren().addAll(buildObjectList(list, attr));
 				 return g;
 			 }			 
@@ -377,8 +387,13 @@ public class SVGParser {
 			 if(!cont.isEmpty()) {
 				
 				 String attr = getAttributeString(s, "g")+" "+cas;
-				 Group g = new Group();				 
-				 List<String> list = getSvgObjectWithRegex(cont);
+				 Group g = new Group();		
+				 List<String> list;
+				 if(cont.indexOf("svg") > -1 || cont.indexOf("g") > -1) {
+					 list = listObjects(cont);				
+				 }					 
+				 else
+				  	 list = regexListObjects(cont); 
 				 
 				 g.getChildren().addAll(buildObjectList(list, attr));
 				 return g;
@@ -449,21 +464,46 @@ public class SVGParser {
 
 		 int start = s.indexOf(">");
 		 int end = s.lastIndexOf("<");
-		 if(start > -1 && end > -1)
-			 return s.substring(start+1, end-1);
+		 if(start > -1 && end > -1) {
+			 return s.substring(start+1, end-1);			 
+		 }
+			 
 		 return s;
 	}	
 	
-	//THIS FUNCTION MAY USE FOR FLAT SVG STRUCTURE
-	protected List<String> getSvgObjectWithRegex(String s) { // Get tag list (for flat svg structure)
-		List<String> obList = new ArrayList<String>();						
+	private List<String> listObjects(String s) {
+		List<String> list = new ArrayList<String>();
+		String[] S = {s, ""};
+		int index = 0,  strlen = 0, length = S[0].length();	
+		String key;
+		
+		while(index < length)
+		{
+			key = findKey(s, index);
 
-		Pattern O1_REGEX = Pattern.compile("(<("+gkey+")[^<(/>)>]*(\\(.*\\))*[^<(/>)>]*>.*?(\\1*).+?(</\\2>))|(<"+gkey+"[^<>]*(\\(.*\\))*[^<(/>)>]*/>)");
-	    Matcher matcher = O1_REGEX.matcher(s);	
+			if(!key.isEmpty())			
+			{
+				strlen = svgObject(S, key, index);
+				index += strlen;
+				list.add(S[1]);
+			}
+			else
+				return list;
+			
+		}
+
+		return list;
+	}
+	
+	//THIS FUNCTION MAY USE FOR FLAT SVG STRUCTURE
+	protected List<String> regexListObjects(String s) { // Get tag list (for flat svg structure)
+		List<String> obList = new ArrayList<String>();
+		Pattern O_REGEX = Pattern.compile("(\"+gkey+\")[^<(/>)>]*(\\(.*\\))*[^<(/>)>]*>[^<(/>)>]*(</\\2>)|(<"+gkey+"[^<>]*(\\(.*\\))*[^<(/>)>]*/>)");
+	    Matcher matcher = O_REGEX.matcher(s);	
 	
 		while (matcher.find()) {
-			obList.add(matcher.group(0));
-			System.out.println(matcher.group(0));
+			obList.add(matcher.group(0));	
+//			System.out.println(matcher.group(0));
 	    }
 		
 		return obList;
@@ -472,11 +512,11 @@ public class SVGParser {
 
 	protected String findKey(String s, int index) { // Find nearest tag key		
 		
-		Pattern K_REGEX = Pattern.compile(".{"+index+"}(<"+gkey+")", Pattern.DOTALL);		
+		Pattern K_REGEX = Pattern.compile(".{"+index+"}(<"+gkey+"[\\s>])", Pattern.DOTALL);		
 		Matcher matcher = K_REGEX.matcher(s);	
 		
-		if(matcher.find()) {
-			return matcher.group(0).replace("<", "");			 
+		if(matcher.find()) {			
+			return matcher.group(0).substring(index+1, matcher.group(0).length()-1);		
 		}
 			
 		return "";
@@ -569,4 +609,18 @@ public class SVGParser {
 			
 	private String fileContent;			
 	private String gkey = "((svg)|(g)|(rect)|(circle)|(ellipse)|(line)|(polyline)|(polygon)|(path)|(text))";
+	/*
+	private StringBuffer[] bkeys = {
+			new StringBuffer("svg"),
+			new StringBuffer("g"),	
+			new StringBuffer("text"),
+			new StringBuffer("path"),
+			new StringBuffer("polygon"),
+			new StringBuffer("polyline"),
+			new StringBuffer("rect"),
+			new StringBuffer("line"),
+			new StringBuffer("circle"),
+			new StringBuffer("ellipse"),
+	};
+	*/
 }
