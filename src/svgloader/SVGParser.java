@@ -2,7 +2,6 @@ package svgloader;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
@@ -19,9 +18,7 @@ import javafx.scene.text.Text;
 
 //
 public class SVGParser {
-	private static final int DEFAULT_ATTR_GROUP=2,
-							CSS_ATTR_GROUP=4;
-	private String fileContent;//TODO: find a specific use
+	protected String fileContent;//TODO: find a specific use
 	/**
 	Constructor
 	@param svgName String
@@ -42,7 +39,7 @@ public class SVGParser {
 
 		buf = new byte[inFile.available()];
 		length = inFile.read(buf);
-		fileContent = new String(buf, 0, length);
+		fileContent = (new String(buf, 0, length)).replaceAll("\\s", " ");
 		
 	}
 	/**
@@ -152,14 +149,8 @@ public class SVGParser {
 	}
 	
 	private String getAttribute(String s,String key){//TODO: is case sensitive?
-		Pattern p= Pattern.compile("(\\b"+key+"=\"([^\"]*)\")|(style=\"[\\w\\W]*"
-									+key+":([\\S^;]*)\\b[\\w\\W])");
-		Matcher m=p.matcher(s);
-		if(m.find()){
-			return (m.group(DEFAULT_ATTR_GROUP)!=null)? m.group(DEFAULT_ATTR_GROUP)
-					:((m.group(CSS_ATTR_GROUP)!=null)? m.group(CSS_ATTR_GROUP):null);
-		}
-		return null;
+		int beginIndex=s.indexOf(" "+key+"=\"")+key.length()+3;
+		int endIndex=s.indexOf("\"",beginIndex);
 	}
 	
 	private String getTag(String s, String key){//TODO: is case sensitive?
@@ -223,7 +214,10 @@ public class SVGParser {
 	@param key String the designated key (e.g. key fill-opacity -> <rect...fill-opacity="0.5".../>)
 	@return double opacity value of JavaFX color of the given key*/
 	public double opacityValue(String s, String key) {
-		return Double.parseDouble(getString(s,key));
+		String value=getString(s,key);
+		if(value==null)
+			return 1;
+		return Double.parseDouble(value);
 		
 	}
 	
