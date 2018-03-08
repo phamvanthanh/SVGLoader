@@ -2,9 +2,7 @@ package svgloader;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
@@ -483,23 +481,6 @@ public class SVGParser {
 			 return s.substring(start+1, end-1);
 		 return s;
 	}	
-	
-	//THIS FUNCTION MAY USE FOR FLAT SVG STRUCTURE
-	protected List<String> getSvgObjectWithRegex(String s) { // Get tag list (for flat svg structure)
-		List<String> obList = new ArrayList<String>();		
-					
-		String key = "((rect)|(circle)|(ellipse)|(line)|(polyline)|(polygon)|(path)|(svg)|(text))";
-		Pattern O_REGEX = Pattern.compile("(<("+key+")[^<(/>)>]*>[^<>]*?(<\\2[^<>]*>([^<>]*?(\n))*[^<>]*?</\\2>)*[^<>]*?(</\\2>))|(<"+key+"[^<>]*/>)");
-
-	    Matcher matcher = O_REGEX.matcher(s);	
-	
-		while (matcher.find()) {
-			obList.add(matcher.group(0));
-	    }
-
-		return obList;
-	}
-	
 
 	protected String findKey(String s, int index) { // Find near tag key
 		
