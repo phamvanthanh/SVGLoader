@@ -81,9 +81,7 @@ public class SVGParser {
 		}
                 else if(s.indexOf("<rect") > -1) {
                     
-                    attr = getAttributeString(s, "rect")+cas;			
-                    double rx = getValue(attr, "ry");
-                    double ry = getValue(attr, "ry");
+                    attr = getAttributeString(s, "rect")+cas;             
                     SVGPath sh = rectPath(getValue(attr, "x"), 
                                           getValue(attr, "y"), 
                                           getValue(attr, "width"),
@@ -103,7 +101,7 @@ public class SVGParser {
                     return sh;
 		}
                 else if(s.indexOf("<ellipse") > -1) {
-                    attr = getAttributeString(s, "circle")+cas;
+                    attr = getAttributeString(s, "ellipse")+cas;
                     SVGPath sh = ellipsePath(getValue(attr, "cx"),
                                              getValue(attr, "cy"),
                                              getValue(attr, "rx"),
@@ -136,7 +134,7 @@ public class SVGParser {
 		}
 		
 		if(s.indexOf("<text") > -1) {
-                    attr = getAttributeString(s, "polygon")+cas;
+                    attr = getAttributeString(s, "text")+cas;
                     Text sh = new Text();
                     sh.setText(getString(s, "text"));
                     sh.setX(getValue(attr, "x"));
@@ -144,7 +142,7 @@ public class SVGParser {
                     double fs = getValue(attr, "font-size");
 			if(!(fs > 0.0001))
 				fs = 14; // Default font size
-                    System.out.println(attr);
+             
 		    sh.setFont(Font.font(getString(attr, "font-family"), fs));
                     setStyle(sh, attr);              
                     return sh;					
@@ -341,7 +339,7 @@ public class SVGParser {
 	*/
 	public List<Node> buildObjectList(List<String> list, String cas){
 		List<Node> oList = new ArrayList<Node>();	
-                System.out.println("Cas:"+cas);
+           
 		for(String el: list) {	
 		    Thread th = new Thread(new Runnable(){
                         @Override
@@ -366,12 +364,12 @@ public class SVGParser {
 			}
 			
 		}
-//		System.out.println(list);
+
 		return oList;
 	}
 	public  Node buildObject(String s, String cas) {
 		String key = findKey(s, 0); 
-		
+	
 		if(key.equals("svg")) {
 			 
 			 String cont = getContent(s);
@@ -403,7 +401,7 @@ public class SVGParser {
 
 			 if(!cont.isEmpty()) {
 				
-				 String attr = getAttributeString(s, "g");
+				 String attr = getAttributeString(s, "g")+cas;
 				 			
 				 Group g = new Group();		
 				 List<String> list;
@@ -424,9 +422,7 @@ public class SVGParser {
 		 return null;
 					
 	}
-	
-
-	
+		
 	private int isSelfClose(String s, int index) {
 		int close = s.indexOf(">", index);		
 		
