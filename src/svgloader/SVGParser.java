@@ -519,15 +519,7 @@ public class SVGParser {
 		}
                 return key;
         }
-        private String regexFindKey(String s, int index){
-            Pattern K_REGEX = Pattern.compile(".{"+index+"}(<"+gkey+"[\\s>])", Pattern.DOTALL);		
-            Matcher matcher = K_REGEX.matcher(s);
-            if(matcher.find()) {			
-                    return matcher.group(0).substring(index+1, matcher.group(0).length()-1);			
-            }
-            return "";
-        }
-	
+        	
 	private String getAttributeString(String s, String key) { // Get all attribute string of a tag		
 		return s.substring(s.indexOf("<")+key.length()+1, s.indexOf(">"));
 	}	
