@@ -33,7 +33,7 @@ public class SVGParser {
 	@exception Java generic Exception if suffix is neither .svg, nor .svgz or the content does
 	not contain any block starting with <svg and ending with </svg>
 	*/
-	
+
 	public SVGParser(String svgName) throws Exception {
 		
             if(!(svgName.endsWith(".svg")||svgName.endsWith(".svgz")))
@@ -53,8 +53,12 @@ public class SVGParser {
 
             fileContent = (new String(buf, 0, length)).replaceAll("[\\t\\n\\r]+"," ")
                                                       .replaceAll(" {2,}", " ")
-                                                      .replaceAll("(\\<\\?xml.+\\?\\>|\\<\\!DOCTYPE.+]\\>)|(xmlns=[^\\s]*\")|(version=[^\\s]*\")", " ")                                                     
+                                                      .replaceAll("\\<\\?xml.+\\?\\>"," ")
+                                                      .replaceAll("<!--[\\s\\S]*?-->", "")
+                                                      .replaceAll("<!DOCTYPE[^>]*>", "")
+                                                      .replaceAll("xmlns[^\\s]*\""," ")
                                                       .trim();
+            System.out.println(fileContent);
 			 			
 			  
 	}
@@ -65,7 +69,7 @@ public class SVGParser {
 	*/
 	public Shape shape(String s, String cas) { 
 		String attr = "";             
-                if(s.indexOf("<path") > -1) {
+                if(s.indexOf("<path") > -1 ) {                 
                     SVGPath sh = new SVGPath();
                     attr = getAttributeString(s, "path")+cas;
 		    sh.setContent(svgPathContent(attr));		
@@ -73,7 +77,7 @@ public class SVGParser {
 		    sh.setStrokeLineCap(getStrokeLineCap(attr));
 		    sh.setStrokeLineJoin(getStrokeLineJoin(attr));
 		    sh.setStrokeMiterLimit(getStrokeMiterLimit(attr));	
-                    setStyle(sh, attr);
+                    setStyle(sh, attr);                   
                     return sh;
                    
 		}
@@ -305,7 +309,7 @@ public class SVGParser {
 		}
 				
 		S[1]= rst;	
-
+                System.out.println("Key :"+key);
 		return rst.length();
 	}
 
@@ -325,7 +329,7 @@ public class SVGParser {
 	 */
 		   
 	public List<Node> getObject() {		
-		List<String> list = listObjects(fileContent);
+		List<String> list = listObjects(fileContent);                
 		return buildObjectList(list, "");
 	}
 	
@@ -337,7 +341,7 @@ public class SVGParser {
 	*/
 	public List<Node> buildObjectList(List<String> list, String cas){
 		List<Node> oList = new ArrayList<Node>();	
-           
+                
 		for(String el: list) {	
 		    Thread th = new Thread(new Runnable(){
                         @Override
@@ -373,15 +377,20 @@ public class SVGParser {
 			 String cont = getContent(s);
 			 if(!cont.isEmpty()) {
 				 String attr = getAttributeString(s, "svg");
-				 double x = getValue(attr, "x");
-				 double y = getValue(attr, "y");
-				
-				 attr = attr.replaceAll("(x=\"[0-9\\.]*\")|(y=\"[0-9\\.]*\")|(width=\"[^\"]*\")|(height=\"[^\"]*\")", "")+" "+cas;
+				 String xstr = (getString(attr, "x").split("[a-z]")[0]);
+                                 double x = 0, y = 0;
+                                 if(xstr.isEmpty())
+                                     x = Double.parseDouble(xstr);
                                  
-				 Group g = new Group();
-				 g.setTranslateX(x);
-				 g.setTranslateY(y);
-				 
+				 String ystr = getString(attr, "y").split("[a-z]")[0];
+                                 if(ystr.isEmpty())
+                                     y = Double.parseDouble(ystr);
+                                 
+                                 Group g = new Group();
+                                 g.setTranslateX(x);
+				 g.setTranslateY(y);				
+				 attr = attr.replaceAll("(x=\"[0-9\\.]*\")|(y=\"[0-9\\.]*\")|(width=\"[^\"]*\")|(height=\"[^\"]*\")", "")+" "+cas;
+                                 		 
 				 List<String> list;
 				 if(cont.indexOf("svg") > -1 || cont.indexOf("g") > -1) {
 					 list = listObjects(cont);					
@@ -476,7 +485,8 @@ public class SVGParser {
 	
 		while (matcher.find()) {
 			obList.add(matcher.group(0));
-	    }		
+	    }	
+                
 		return obList;
 	}
 	
@@ -575,7 +585,7 @@ public class SVGParser {
 		String trans = getString(s, "transform");
 		if(!trans.isEmpty()) {
 			
-			String arrStr =  trans.substring(trans.indexOf("(")+1, trans.indexOf(")")-1);
+			String arrStr =  trans.substring(trans.indexOf("(")+1, trans.indexOf(")"));
 			double [] arr =  Arrays.stream(arrStr.split("[\\s,]"))
 					 .mapToDouble(Double::parseDouble)
 					 .toArray();
@@ -588,7 +598,7 @@ public class SVGParser {
 				else if(len == 4)
 					return new Rotate(arr[0], arr[1], arr[2], arr[3]);				
 			}
-			else if(trans.indexOf("matrix")>-1) {
+			else if(trans.indexOf("matrix")>-1) {                                         
 				if(len==6)
 					return new Affine(arr[0], arr[1], arr[2], arr[3], arr[4], arr[5]);
 			}
@@ -662,9 +672,17 @@ public class SVGParser {
              
         }
         private void setStyle(Shape sh, String s){
-                sh.setStroke(getColor(s, "stroke"));	
-	
-		sh.setFill(getColor(s, "fill"));
+                
+                if(getColor(s, "stroke") == null)
+                    sh.setFill(null);    
+                else
+                     sh.setStroke(getColor(s, "stroke"));
+               
+                if(getColor(s, "fill") == null)
+                     sh.setFill(Color.BLACK);
+              
+                else                   
+                    sh.setFill(getColor(s, "fill"));
 		double sw = getValue(s, "stroke-width");
 		if(!(sw > 0.0000001) )
 			sw = 1;
@@ -683,7 +701,7 @@ public class SVGParser {
         }
 			
 	private String fileContent;			
-	private StringBuffer gkey = new StringBuffer("((svg)|(g)|(rect)|(circle)|(ellipse)|(line)|(polyline)|(polygon)|(path)|(text))");
-	private String[] keys = {"svg", "g", "polygon", "polyline", "rect", "line", "ellipse", "circle", "path", "text"};
+	private StringBuffer gkey = new StringBuffer("((svg)|(g)|(clipPath)|(rect)|(circle)|(ellipse)|(line)|(polyline)|(polygon)|(path)|(text))");
+	private String[] keys = {"svg", "g", "clipPath", "polygon", "polyline", "rect", "line", "ellipse", "circle", "path", "text"};
 
 }
