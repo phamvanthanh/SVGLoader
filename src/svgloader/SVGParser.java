@@ -149,8 +149,24 @@ public class SVGParser {
 	}
 	
 	private String getAttribute(String s,String key){//TODO: is case sensitive?
-		int beginIndex=s.indexOf(" "+key+"=\"")+key.length()+3;
-		int endIndex=s.indexOf("\"",beginIndex);
+		int beginIndex=s.indexOf(" "+key+"=\"");
+		if(beginIndex!=-1){
+			beginIndex+=key.length()+3;
+			return s.substring(beginIndex, s.indexOf("\"",beginIndex));
+		}
+		
+		int stylePos=s.indexOf(" style=\"");
+		if(stylePos==-1)
+			return null;
+		String tmp=s.substring(stylePos+7,s.indexOf("\"",stylePos+8)).replaceAll("\"", " ");
+		beginIndex=tmp.indexOf(" "+key+":");
+		if(beginIndex!=-1){
+			beginIndex+=key.length()+2;
+			int endIndex=tmp.indexOf(' ',beginIndex);
+			endIndex-=(tmp.charAt(endIndex-1)==';')?1:0;
+			return tmp.substring(beginIndex,endIndex);
+		}
+		return null;
 	}
 	
 	private String getTag(String s, String key){//TODO: is case sensitive?
