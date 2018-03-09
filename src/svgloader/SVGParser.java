@@ -58,8 +58,6 @@ public class SVGParser {
 			 			
 			  
 	}
-	
-
 	/**
 	Shaping a geometrical form
 	@param S JFX-Shape (Rectangle, Ellipse, Circle, etc.)
@@ -688,13 +686,4 @@ public class SVGParser {
 	private StringBuffer gkey = new StringBuffer("((svg)|(g)|(rect)|(circle)|(ellipse)|(line)|(polyline)|(polygon)|(path)|(text))");
 	private String[] keys = {"svg", "g", "polygon", "polyline", "rect", "line", "ellipse", "circle", "path", "text"};
 
-}
-class Bulder implements Runnable {
-
-	@Override
-	public void run() {
-		// TODO Auto-generated method stub
-		
-	}
-	
 }
