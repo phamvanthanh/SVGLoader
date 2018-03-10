@@ -10,10 +10,14 @@ import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
-
+import javafx.scene.paint.RadialGradient;
+import javafx.scene.paint.LinearGradient;
+import javafx.scene.paint.Stop;
+import javafx.scene.paint.CycleMethod;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
 import javafx.scene.shape.FillRule;
 import javafx.scene.shape.SVGPath;
 import javafx.scene.shape.Shape;
@@ -54,11 +58,12 @@ public class SVGParser {
             fileContent = (new String(buf, 0, length)).replaceAll("[\\t\\n\\r]+"," ")
                                                       .replaceAll(" {2,}", " ")
                                                       .replaceAll("\\<\\?xml.+\\?\\>"," ")
+                                                      .replaceAll("\\<\\?metadata.+\\?\\>"," ")
                                                       .replaceAll("<!--[\\s\\S]*?-->", "")
                                                       .replaceAll("<!DOCTYPE[^>]*>", "")
                                                       .replaceAll("xmlns[^\\s]*\""," ")
                                                       .trim();
-            System.out.println(fileContent);
+
 			 			
 			  
 	}
@@ -241,14 +246,39 @@ public class SVGParser {
 	@param key String the designated key (e.g. key fill -> <rect...fill="blue".../>)
 	@return Color JavaFX color of the given key
 	*/
-	public Color getColor(String s, String key) {
+	public Paint getColor(String s, String key) {
 		
 		String color = getString(s, key);		
-		
-		if (color != null) {
+	
+		if (!color.isEmpty()) {
+                     
+                        if(color.indexOf("url") > -1){
+                            
+                            String fId = color.substring(color.indexOf("#")+1, color.indexOf(")"));
+                            String defs = chaseOut(fileContent, fId);                           
+                            if(defs.contains("<linearGradient"))
+                                return getLinearGradient(defs);
+                            else if(defs.contains("<radialGradient")){                             
+                                return getRadialGradient(defs);
+                            }                                
+                        }
 			SVGColor svgColor = new SVGColor();
 			double op = opacityValue(s, key+"-opacity");
 			return svgColor.svgColor(color, op); // SVGColor API
+		}
+		return null;
+			
+	}
+        
+        protected Color getColor(String s, String color, String opacity) {
+		
+		String c = getString(s, color);		
+		
+		if (c != null) {
+			SVGColor svgColor = new SVGColor();
+			double op = opacityValue(s, opacity);	
+			
+			return svgColor.svgColor(c, op); // SVGColor API
 		}
 		return null;
 			
@@ -259,8 +289,10 @@ public class SVGParser {
 	@param key String the designated key (e.g. key fill-opacity -> <rect...fill-opacity="0.5".../>)
 	@return double opacity value of JavaFX color of the given key*/
 	public double opacityValue(String s, String key) {		
-		double op = getValue(s, key);
-		return op != 0? op: 1;
+		String valStr = getString(s, key);
+		if(!valStr.isEmpty())
+			return Double.parseDouble(valStr);
+		return 1;
 	}
 	
 	/**
@@ -303,13 +335,11 @@ public class SVGParser {
 						break;						
 				}				
 			}			
-
-			
 			rst = S[0].substring(start, close);				
 		}
 				
 		S[1]= rst;	
-                System.out.println("Key :"+key);
+               
 		return rst.length();
 	}
 
@@ -379,11 +409,11 @@ public class SVGParser {
 				 String attr = getAttributeString(s, "svg");
 				 String xstr = (getString(attr, "x").split("[a-z]")[0]);
                                  double x = 0, y = 0;
-                                 if(xstr.isEmpty())
-                                     x = Double.parseDouble(xstr);
+                                 if(!xstr.isEmpty())                                     
+                                     x = Double.parseDouble(xstr);                                                     
                                  
 				 String ystr = getString(attr, "y").split("[a-z]")[0];
-                                 if(ystr.isEmpty())
+                                 if(!ystr.isEmpty())
                                      y = Double.parseDouble(ystr);
                                  
                                  Group g = new Group();
@@ -452,7 +482,7 @@ public class SVGParser {
 		 return s;
 	}	
 	
-	private List<String> listObjects(String s) {
+	protected List<String> listObjects(String s) {
 		List<String> list = new ArrayList<String>();
 		String[] S = {s, ""};
 		int index = 0,  strlen = 0, length = S[0].length();	
@@ -464,8 +494,7 @@ public class SVGParser {
 			
 			if(!key.isEmpty())			
 			{
-				strlen = svgObject(S, key, index);
-			
+				strlen = svgObject(S, key, index);			
 				index += strlen;
 				list.add(S[1]);
 			}
@@ -476,18 +505,37 @@ public class SVGParser {
 
 		return list;
 	}
+        
+        protected List<String> listObjects(String s, String key){
+            List<String> list = new ArrayList<String>();
+            String[] S = {s, ""};
+            int index = 0,  strlen = 0, length = S[0].length();	
+            
+            while(index < length)
+            {                
+                strlen = svgObject(S, key, index);
+                if(strlen == 0)
+                    return list;
+                index += strlen;
+                list.add(S[1]); 
+                
+              
+            }
+
+            return list;
+        }
 	
 	//THIS FUNCTION MAY USE FOR FLAT SVG STRUCTURE
 	protected List<String> regexListObjects(String s) { // Get tag list (for flat svg structure)
-		List<String> obList = new ArrayList<String>();
-		Pattern O_REGEX = Pattern.compile("(<("+gkey+")[^<(/>)>]*(\\(.*\\))*[^<(/>)>]*>[^<(/>)>]*(</\\2>))|(<"+gkey+"[^<>]*(\\(.*\\))*[^<(/>)>]*/>)");
-	    Matcher matcher = O_REGEX.matcher(s);	
-	
-		while (matcher.find()) {
-			obList.add(matcher.group(0));
-	    }	
-                
-		return obList;
+            List<String> obList = new ArrayList<String>();
+            Pattern O_REGEX = Pattern.compile("(<("+gkey+")[^<(/>)>]*(\\(.*\\))*[^<(/>)>]*>[^<(/>)>]*(</\\2>))|(<"+gkey+"[^<>]*(\\(.*\\))*[^<(/>)>]*/>)");
+            Matcher matcher = O_REGEX.matcher(s);	
+
+                while (matcher.find()) {
+                        obList.add(matcher.group(0));
+            }	
+
+            return obList;
 	}
 	
 
@@ -607,11 +655,94 @@ public class SVGParser {
 		return null;
 	
 	}
-        private Double[] _doubleArray(String s){
+        protected String chaseOut(String s, String key){
+            int pos = s.indexOf(key);
+            
+            if(pos > 0){
+                int begin = s.lastIndexOf('<', pos);
+                String tag = findKey(s, begin);
+                String[] S = {s, tag};
+                svgObject(S, tag, begin);
+                return S[1];          
+            }
+            return "";
+        }
+        protected RadialGradient getRadialGradient(String s){
+                  
+            double cx = 0.5, cy = 0.5, r = 0.5, fa = 0.0, fd = 0.0, fx = 0.5, fy = 0.5;
+             String cxS = getString(s,"cx"),
+                    cyS = getString(s,"cy"),
+                    rS = getString(s,"r"),
+                    fxS = getString(s,"fx"),
+                    fyS = getString(s,"fy");
+             		
+            if(!cxS.isEmpty())                
+                cx = Double.parseDouble(cxS.replace("%", ""))/100;
+            if(!cyS.isEmpty())
+                cy = Double.parseDouble(cyS.replace("%", ""))/100;
+            if(!rS.isEmpty())
+                r = Double.parseDouble(rS.replace("%", ""))/100;
+            
+                
+            if(!fyS.isEmpty()){
+                fy = Double.parseDouble(fyS.replace("%", ""))/100;                
+            }
+            if(!fxS.isEmpty()){            	
+                fx = Double.parseDouble(fxS.replace("%", ""))/100; 
+               
+                if(fx != 0.5) { 
+               	 
+                    fa = Math.atan((fy-0.5)/(fx-0.5))*180/Math.PI;
+                    if(fx < 0.5)
+                       fa += 180;
+                    fd = Math.sqrt((fx-0.5)*(fx-0.5)+(fy-0.5)*(fy-0.5));
+                 
+               }
+               else if(fy < 0.5) {
+            	   fa = 90;
+               }               		
+               else if(fy > 0.5) {
+            	   fa = 270;
+               }
+                       
+            }          		
+              
+            List<Stop> sList = buildStopList(listObjects(getContent(s), "stop"));
+            RadialGradient lg = new RadialGradient(fa, fd, cx, cy, r, true, CycleMethod.NO_CYCLE, sList);
+           
+            return lg;
+        }
+        protected LinearGradient getLinearGradient(String s){
+          
+            double x1 = Double.parseDouble(getString(s,"x1").replace("%", ""))/100;
+            double y1 = Double.parseDouble(getString(s,"y1").replace("%", ""))/100;
+            double x2 = Double.parseDouble(getString(s,"x2").replace("%", ""))/100;
+            double y2 = Double.parseDouble(getString(s,"y2").replace("%", ""))/100;
+            String spmd = getString(s, "spreadMethod");          
+           
+            List<Stop> sList = buildStopList(listObjects(getContent(s), "stop"));
+            LinearGradient lg = new LinearGradient(x1, y1, x2, y2, true, CycleMethod.NO_CYCLE, sList);
+            return lg;
+        }
+        
+        protected List<Stop> buildStopList(List<String> list){
+            List<Stop> sList = new ArrayList<Stop>();
+            
+            for(String s: list){            	
+                sList.add(new Stop(Double.parseDouble(getString(s,"offset").replace("%", ""))/100, 
+                                    getColor(s, "stop-color", "stop-opacity")));
+               
+            }
+          
+            return sList;
+        }
+        
+        protected Double[] _doubleArray(String s){
             return Arrays.stream(s.split("[\\s,]"))
 				.map(Double::valueOf)
                 .toArray(Double[]::new);
         }
+        
         protected SVGPath rectPath(double x, double y, double width, double height, double rx, double ry){
           
             String c1 = " A"+rx+" "+ry+" "+45+" "+0+" "+1+" "+(x+rx)+" "+(y);            
@@ -672,17 +803,16 @@ public class SVGParser {
              
         }
         private void setStyle(Shape sh, String s){
-                
+               
                 if(getColor(s, "stroke") == null)
                     sh.setFill(null);    
                 else
                      sh.setStroke(getColor(s, "stroke"));
-               
-                if(getColor(s, "fill") == null)
-                     sh.setFill(Color.BLACK);
-              
+                Paint paint = getColor(s, "fill");
+                if(paint == null)
+                     sh.setFill(Color.BLACK);              
                 else                   
-                    sh.setFill(getColor(s, "fill"));
+                    sh.setFill(paint);
 		double sw = getValue(s, "stroke-width");
 		if(!(sw > 0.0000001) )
 			sw = 1;
@@ -691,8 +821,7 @@ public class SVGParser {
 		
 		String arr = getString(s, "stroke-dasharray");
 		if(!arr.isEmpty())
-			sh.getStrokeDashArray().addAll(_doubleArray(arr));
-		
+			sh.getStrokeDashArray().addAll(_doubleArray(arr));		
                 
 		Transform trans = getTransform(s);
 		if(trans != null)
@@ -701,7 +830,7 @@ public class SVGParser {
         }
 			
 	private String fileContent;			
-	private StringBuffer gkey = new StringBuffer("((svg)|(g)|(clipPath)|(rect)|(circle)|(ellipse)|(line)|(polyline)|(polygon)|(path)|(text))");
-	private String[] keys = {"svg", "g", "clipPath", "polygon", "polyline", "rect", "line", "ellipse", "circle", "path", "text"};
+	private StringBuffer gkey = new StringBuffer("((svg)|(g)|(clipPath)|(rect)|(circle)|(ellipse)|(line)|(polyline)|(polygon)|(path)|(text)|(defs))");
+	private String[] keys = {"svg", "g", "clipPath", "polygon", "polyline", "rect", "line", "ellipse", "circle", "path", "text", "defs", "linearGradient", "radialGradient"};
 
 }
