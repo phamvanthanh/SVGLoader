@@ -1,12 +1,9 @@
 package svgloader;
 
 import java.io.FileInputStream;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
@@ -40,21 +37,23 @@ public class SVGParser {
 
 	public SVGParser(String svgName) throws Exception {
 		
-            if(!(svgName.endsWith(".svg")||svgName.endsWith(".svgz")))
-                    throw new Exception();
-            byte[] buf = null;
-            int length = 0;			  
-            InputStream inFile=null;
-
-            if(svgName.endsWith(".svg"))
-                    inFile = new FileInputStream(svgName);
-
-            else if(svgName.endsWith(".svgz"))
-                    inFile = new GZIPInputStream( new FileInputStream(svgName));
-
-            buf = new byte[inFile.available()];
-            length = inFile.read(buf);
-
+                byte[] buf = null;
+		int length = 0;
+		
+		if(svgName.endsWith(".svg")) {
+			FileInputStream inFile = new FileInputStream(svgName);
+			buf = new byte[inFile.available()];
+			length = inFile.read(buf);
+			
+		}
+		else if(svgName.endsWith(".svgz")){
+			GZIPInputStream inFile = new GZIPInputStream( new FileInputStream(svgName));
+			buf = new byte[inFile.available()];
+			length = inFile.read(buf);
+		}
+		
+//            fileContent = (new String(buf, 0, length));
+//            System.out.println(fileContent);
             fileContent = (new String(buf, 0, length)).replaceAll("[\\t\\n\\r]+"," ")
                                                       .replaceAll(" {2,}", " ")
                                                       .replaceAll("\\<\\?xml.+\\?\\>"," ")
@@ -63,7 +62,7 @@ public class SVGParser {
                                                       .replaceAll("<!DOCTYPE[^>]*>", "")
                                                       .replaceAll("xmlns[^\\s]*\""," ")
                                                       .trim();
-
+//            System.out.println(fileContent);
 			 			
 			  
 	}
@@ -140,7 +139,7 @@ public class SVGParser {
                     return sh;
 		}
 		
-		if(s.indexOf("<text") > -1) {
+                else if(s.indexOf("<text") > -1) {
                     attr = getAttributeString(s, "text")+cas;
                     Text sh = new Text();
                     sh.setText(getString(s, "text"));
@@ -163,10 +162,10 @@ public class SVGParser {
 	@return double array with 6 elements (see JavaFX or SVG doc)
 	*/
 	public double[] doubleArray(String s) {
-	
-		return Arrays.stream(s.split("[\\s,]"))
-				 .mapToDouble(Double::parseDouble)
-				 .toArray();
+            
+            return Arrays.stream(s.split("[\\s,]"))
+                             .mapToDouble(Double::parseDouble)
+                             .toArray();
 	}
 	/**
 	search and parse the shape of a viewBox
@@ -174,11 +173,12 @@ public class SVGParser {
 	@return double array with Viewbox 4 elements (x, y, width, height)
 	*/
 	public double[] viewBoxData(String s) {	
-				
-		String vb = getString(s, "viewBox");
-		return Arrays.stream(vb.split(" "))
-					 .mapToDouble(Double::parseDouble)
-					 .toArray();
+		ArrayList<String> alStr = Tool.split(getString(s, "viewBox"), " ");
+                int sz = alStr.size();
+                double[] dArr = new double[sz];
+                for (int i = 0; i < sz; ++i) 
+                    dArr[i] = Tool.toDouble(alStr.get(i));
+		return dArr;
 		
 	}
 	/**
@@ -192,7 +192,7 @@ public class SVGParser {
 			
 		String valStr = getString(s, key);	
 		if(!valStr.isEmpty())
-			return Double.parseDouble(valStr);
+			return Tool.toDouble(valStr);
 		
 		return 0;		
 	}
@@ -291,7 +291,7 @@ public class SVGParser {
 	public double opacityValue(String s, String key) {		
 		String valStr = getString(s, key);
 		if(!valStr.isEmpty())
-			return Double.parseDouble(valStr);
+			return Tool.toDouble(valStr);
 		return 1;
 	}
 	
@@ -410,11 +410,11 @@ public class SVGParser {
 				 String xstr = (getString(attr, "x").split("[a-z]")[0]);
                                  double x = 0, y = 0;
                                  if(!xstr.isEmpty())                                     
-                                     x = Double.parseDouble(xstr);                                                     
+                                     x = Tool.toDouble(xstr);                                                     
                                  
 				 String ystr = getString(attr, "y").split("[a-z]")[0];
                                  if(!ystr.isEmpty())
-                                     y = Double.parseDouble(ystr);
+                                     y = Tool.toDouble(ystr);
                                  
                                  Group g = new Group();
                                  g.setTranslateX(x);
@@ -476,8 +476,9 @@ public class SVGParser {
 
 		 int start = s.indexOf(">");
 		 int end = s.lastIndexOf("<");
-		 if(start > -1 && end > -1) {
-			 return s.substring(start+1, end-1);			 
+		 if(start > -1 && end > start) {
+                        
+			 return s.substring(start+1, end);			 
 		 }			 
 		 return s;
 	}	
@@ -517,9 +518,7 @@ public class SVGParser {
                 if(strlen == 0)
                     return list;
                 index += strlen;
-                list.add(S[1]); 
-                
-              
+                list.add(S[1]);                               
             }
 
             return list;
@@ -677,18 +676,18 @@ public class SVGParser {
                     fyS = getString(s,"fy");
              		
             if(!cxS.isEmpty())                
-                cx = Double.parseDouble(cxS.replace("%", ""))/100;
+                cx = Tool.toDouble(cxS.replace("%", ""))/100;
             if(!cyS.isEmpty())
-                cy = Double.parseDouble(cyS.replace("%", ""))/100;
+                cy = Tool.toDouble(cyS.replace("%", ""))/100;
             if(!rS.isEmpty())
-                r = Double.parseDouble(rS.replace("%", ""))/100;
+                r = Tool.toDouble(rS.replace("%", ""))/100;
             
                 
             if(!fyS.isEmpty()){
-                fy = Double.parseDouble(fyS.replace("%", ""))/100;                
+                fy = Tool.toDouble(fyS.replace("%", ""))/100;                
             }
             if(!fxS.isEmpty()){            	
-                fx = Double.parseDouble(fxS.replace("%", ""))/100; 
+                fx = Tool.toDouble(fxS.replace("%", ""))/100; 
                
                 if(fx != 0.5) { 
                	 
@@ -703,8 +702,7 @@ public class SVGParser {
                }               		
                else if(fy > 0.5) {
             	   fa = 270;
-               }
-                       
+               }                       
             }          		
               
             List<Stop> sList = buildStopList(listObjects(getContent(s), "stop"));
@@ -713,12 +711,21 @@ public class SVGParser {
             return lg;
         }
         protected LinearGradient getLinearGradient(String s){
-          
-            double x1 = Double.parseDouble(getString(s,"x1").replace("%", ""))/100;
-            double y1 = Double.parseDouble(getString(s,"y1").replace("%", ""))/100;
-            double x2 = Double.parseDouble(getString(s,"x2").replace("%", ""))/100;
-            double y2 = Double.parseDouble(getString(s,"y2").replace("%", ""))/100;
-            String spmd = getString(s, "spreadMethod");          
+            
+            double x1 = 0, y1 = 0, x2 = 0, y2 = 0;
+            String x1Str = getString(s,"x1").replace("%", "");
+            String y1Str = getString(s,"y1").replace("%", "");
+            String x2Str = getString(s,"x2").replace("%", "");
+            String y2Str = getString(s,"y2").replace("%", "");
+            if(!x1Str.isEmpty())
+                x1 = Tool.toDouble(x1Str)/100;
+            if(!y1Str.isEmpty())
+                y1 = Tool.toDouble(getString(s,"y1").replace("%", ""))/100;
+            if(!x2Str.isEmpty())
+                x2 = Tool.toDouble(getString(s,"x2").replace("%", ""))/100;
+            if(!y2Str.isEmpty())
+                y2 = Tool.toDouble(getString(s,"y2").replace("%", ""))/100;
+//            String spmd = getString(s, "spreadMethod");          
            
             List<Stop> sList = buildStopList(listObjects(getContent(s), "stop"));
             LinearGradient lg = new LinearGradient(x1, y1, x2, y2, true, CycleMethod.NO_CYCLE, sList);
@@ -736,8 +743,11 @@ public class SVGParser {
           
             return sList;
         }
-        
+               
         protected Double[] _doubleArray(String s){
+            if(s.indexOf("none") > -1 || s.isEmpty())
+                return null;
+            
             return Arrays.stream(s.split("[\\s,]"))
 				.map(Double::valueOf)
                 .toArray(Double[]::new);
@@ -820,8 +830,9 @@ public class SVGParser {
 		sh.setOpacity(opacityValue(s, "opacity"));
 		
 		String arr = getString(s, "stroke-dasharray");
-		if(!arr.isEmpty())
-			sh.getStrokeDashArray().addAll(_doubleArray(arr));		
+                Double[] dArr = _doubleArray(arr);
+		if(dArr != null)
+			sh.getStrokeDashArray().addAll(dArr);		
                 
 		Transform trans = getTransform(s);
 		if(trans != null)
