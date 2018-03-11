@@ -52,8 +52,7 @@ public class SVGParser {
 			length = inFile.read(buf);
 		}
 		
-//            fileContent = (new String(buf, 0, length));
-//            System.out.println(fileContent);
+
             fileContent = (new String(buf, 0, length)).replaceAll("[\\t\\n\\r]+"," ")
                                                       .replaceAll(" {2,}", " ")
                                                       .replaceAll("\\<\\?xml.+\\?\\>"," ")
@@ -62,9 +61,7 @@ public class SVGParser {
                                                       .replaceAll("<!DOCTYPE[^>]*>", "")
                                                       .replaceAll("xmlns[^\\s]*\""," ")
                                                       .trim();
-//            System.out.println(fileContent);
-			 			
-			  
+		  
 	}
 	/**
 	Shaping a geometrical form
@@ -208,7 +205,7 @@ public class SVGParser {
 		int index = key.length();
 		if(s.indexOf(" "+key+"=\"") > -1) {
 			index += s.indexOf(" "+key+"=\"")+3;
-			return s.substring(index, s.indexOf("\"", index));
+			return s.substring(index, s.indexOf('"', index));
 		}
 		
 		else if(s.indexOf(key+":") > -1) { //CASE OF CSS FORMAT
@@ -229,8 +226,8 @@ public class SVGParser {
 		}
 		
 		else if(key == "text") {			
-			int tIndex = s.indexOf(">")+1;
-			return s.substring(tIndex, s.indexOf("<", tIndex));
+			int tIndex = s.indexOf('>')+1;
+			return s.substring(tIndex, s.indexOf('<', tIndex));
 		}
 		else if(s.indexOf("<"+key+" ") > -1) {
 			index += s.indexOf("<"+key)+1;
@@ -254,7 +251,7 @@ public class SVGParser {
                      
                         if(color.indexOf("url") > -1){
                             
-                            String fId = color.substring(color.indexOf("#")+1, color.indexOf(")"));
+                            String fId = color.substring(color.indexOf('#')+1, color.indexOf(')'));
                             String defs = chaseOut(fileContent, fId);                           
                             if(defs.contains("<linearGradient"))
                                 return getLinearGradient(defs);
@@ -461,7 +458,7 @@ public class SVGParser {
 	}
 		
 	private int isSelfClose(String s, int index) {
-		int close = s.indexOf(">", index);		
+		int close = s.indexOf('>', index);		
 		
 		if(close > 0) {
 			if(s.indexOf("/>", index) == (close -1)) {				
@@ -474,8 +471,8 @@ public class SVGParser {
 	
 	protected String getContent(String s) { //Get content of a balanced tag
 
-		 int start = s.indexOf(">");
-		 int end = s.lastIndexOf("<");
+		 int start = s.indexOf('>');
+		 int end = s.lastIndexOf('<');
 		 if(start > -1 && end > start) {
                         
 			 return s.substring(start+1, end);			 
@@ -540,14 +537,14 @@ public class SVGParser {
 
 	protected String findKey(String s, int index) { // Find nearest tag key (combine methods for better speed)		
 		
-		int start = s.indexOf("<", index);
+		int start = s.indexOf('<', index);
 		if(start > -1 && start < s.length()-9) {
                         if(s.indexOf("</", index) == start || s.indexOf("< /", index) == start){
                             return loopFindKey(s, index);
                         }
                         else {
-                            int end1 = s.indexOf(" ", start+1);
-                            int end2 = s.indexOf(">", start+1);
+                            int end1 = s.indexOf(' ', start+1);
+                            int end2 = s.indexOf('>', start+1);
                             if(end1 > -1 && end1 < end2)
                                 return s.substring(start+1, end1);
                             else
