@@ -39,7 +39,7 @@ public class Test extends Application {
 			primaryStage.show();
                         long start = System.currentTimeMillis();
                         if(pl.isEmpty())
-                            loader = new SVGLoader("C:/test/test1.svg");
+                            loader = new SVGLoader("C:/test/radialG.svg");
                         else
                             loader = new SVGLoader(pl.get(0));	
 			

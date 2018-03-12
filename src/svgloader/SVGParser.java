@@ -20,7 +20,6 @@ import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.shape.StrokeLineJoin;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
-import javafx.scene.transform.Affine;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Transform;
 
@@ -35,31 +34,33 @@ public class SVGParser {
 
 	public SVGParser(String svgName) throws Exception {
 		
-            byte[] buf = null;
-            int length = 0;
-
-            if(svgName.endsWith(".svg")) {
-                    FileInputStream inFile = new FileInputStream(svgName);
-                    buf = new byte[inFile.available()];
-                    length = inFile.read(buf);
-
-            }
-            else if(svgName.endsWith(".svgz")){
-                    GZIPInputStream inFile = new GZIPInputStream( new FileInputStream(svgName));
-                    buf = new byte[inFile.available()];
-                    length = inFile.read(buf);
-            }
+                byte[] buf = null;
+		int length = 0;
+		
+		if(svgName.endsWith(".svg")) {
+			FileInputStream inFile = new FileInputStream(svgName);
+			buf = new byte[inFile.available()];
+			length = inFile.read(buf);
+			
+		}
+		else if(svgName.endsWith(".svgz")){
+			GZIPInputStream inFile = new GZIPInputStream( new FileInputStream(svgName));
+			buf = new byte[inFile.available()];
+			length = inFile.read(buf);
+		}
 		
 
             SVG = (new String(buf, 0, length)).replaceAll("[\\t\\n\\r]+"," ")
-                                                .replaceAll(" {2,}", " ")
-                                                .replaceAll("\\<\\?xml.+\\?\\>"," ")
-                                                .replaceAll("\\<\\?metadata.+\\?\\>"," ")
-                                                .replaceAll("<!--[\\s\\S]*?-->", "")
-                                                .replaceAll("<!DOCTYPE[^>]*>", "")
-                                                .replaceAll("xmlns[^\\s]*\""," ")
-                                                .trim();
-		  
+                                                      .replaceAll(" {2,}", " ")
+                                                      .replaceAll("\\<\\?xml.+\\?\\>"," ")
+                                                      .replaceAll("\\<\\?metadata.+\\?\\>"," ")
+                                                      .replaceAll("<!--[\\s\\S]*?-->", "")
+                                                      .replaceAll("<!DOCTYPE[^>]*>", "")
+                                                      .replaceAll("xmlns[^\\s]*\""," ")
+                                                      .trim();
+//            System.out.println(SVG);
+			 			
+			  
 	}
 	/**
 	Shaping a geometrical form
@@ -67,10 +68,8 @@ public class SVGParser {
 	@param s String, the parsing string (e.g. <circle .. style="...."/>)
 	*/
 	public Shape shape(String s, String cas) { 
-           
-            String attr = "";             
-                if(s.indexOf("<path") > -1 ) {   
-                    
+		String attr = "";             
+                if(s.indexOf("<path") > -1 ) {                 
                     SVGPath sh = new SVGPath();
                     attr = getAttributeString(s, "path")+cas;
 		    sh.setContent(svgPathContent(attr));		
@@ -78,8 +77,7 @@ public class SVGParser {
 		    sh.setStrokeLineCap(getStrokeLineCap(attr));
 		    sh.setStrokeLineJoin(getStrokeLineJoin(attr));
 		    sh.setStrokeMiterLimit(getStrokeMiterLimit(attr));	
-                    setStyle(sh, attr);
-                  
+                    setStyle(sh, attr);                   
                     return sh;
                    
 		}
@@ -151,8 +149,6 @@ public class SVGParser {
                     setStyle(sh, attr);              
                     return sh;					
 		}
-                
-                
                 return null;
 				
 	}
@@ -162,14 +158,13 @@ public class SVGParser {
 	@return double array with 6 elements (see JavaFX or SVG doc)
 	*/
 	public double[] doubleArray(String s) {
-            if(s.indexOf("none") > -1 || s.isEmpty())
-                return null;
+            
             return Arrays.stream(s.split("[\\s,]"))
-                             .mapToDouble(Double::parseDouble)
+                             .mapToDouble(Tool::toDouble)
                              .toArray();
 	}
         
-        public Double[] _doubleArray(String s){
+        protected Double[] _doubleArray(String s){
             if(s.indexOf("none") > -1 || s.isEmpty())
                 return null;
             
@@ -202,7 +197,8 @@ public class SVGParser {
 			
 		String valStr = getString(s, key);	
 		if(!valStr.isEmpty())
-			return Tool.toDouble(valStr);		
+			return Tool.toDouble(valStr);
+		
 		return 0;		
 	}
 	
@@ -217,7 +213,7 @@ public class SVGParser {
 		int index = key.length();
 		if(s.indexOf(" "+key+"=\"") > -1) {
 			index += s.indexOf(" "+key+"=\"")+3;
-			return s.substring(index, s.indexOf('"', index));
+			return s.substring(index, s.indexOf("\"", index));
 		}
 		
 		else if(s.indexOf(key+":") > -1) { //CASE OF CSS FORMAT
@@ -232,7 +228,7 @@ public class SVGParser {
 					return "";
 				
 				index +=ind + 1;
-				return s.substring(index, s.indexOf(";", index));
+				return s.substring(index, s.indexOf(';', index));
 			}			
 			return "";
 		}
@@ -261,9 +257,8 @@ public class SVGParser {
 	
 		if (!color.isEmpty()) {
                      
-                        if(color.indexOf("url") > -1){
-                            
-                            String fId = color.substring(color.indexOf('#')+1, color.indexOf(')'));
+                        if(color.indexOf("url") > -1){                            
+                            String fId = color.substring(color.indexOf("#")+1, color.indexOf(")"));
                             String defs = chaseOut(SVG, fId);                           
                             if(defs.contains("<linearGradient"))
                                 return getLinearGradient(defs);
@@ -321,18 +316,18 @@ public class SVGParser {
 			if( close < 0) { 	// Not self close tag														
 				close = S[0].indexOf("/"+key+">", start)+ length +2; 	//First close		
 
-				int oInd = start + key.length() + 1; 
+				int oInd = start + length + 1; 
 			
 				while(oInd < close){
 					int open = S[0].indexOf("<"+key, oInd); // next open
 					
-					if(open > -1 && open+ length + 1 < close) {
+					if(open > -1 && open + length + 1 < close) {
 					
-						oInd = open + length + 1;
+						oInd = open+key.length()+1;
 						if(isSelfClose(S[0], oInd) < 0 ) {
 							int c = S[0].indexOf("/"+key+">", close); //next close
 							if(c > -1) {
-								close = c+ length +2;	
+								close = c+ length + 2;	
 							}
 							else {
 								System.out.println("SVG file contains errors");
@@ -366,9 +361,12 @@ public class SVGParser {
 	/**
 	 * Return Group contains all SVG object
 	 */
-				
+		   
+	
+	
+	
 	private int isSelfClose(String s, int index) {
-		int close = s.indexOf('>', index);		
+		int close = s.indexOf(">", index);		
 		
 		if(close > 0) {
 			if(s.indexOf("/>", index) == (close -1)) {				
@@ -381,9 +379,10 @@ public class SVGParser {
 	
 	protected String getContent(String s) { //Get content of a balanced tag
 
-		 int start = s.indexOf('>');
-		 int end = s.lastIndexOf('<');
-		 if(start > -1 && end > start) {                        
+		 int start = s.indexOf(">");
+		 int end = s.lastIndexOf("<");
+		 if(start > -1 && end > start) {
+                        
 			 return s.substring(start+1, end);			 
 		 }			 
 		 return s;
@@ -436,8 +435,8 @@ public class SVGParser {
             Pattern O_REGEX = Pattern.compile("(<("+gkey+")[^<(/>)>]*(\\(.*\\))*[^<(/>)>]*>[^<(/>)>]*(</\\2>))|(<"+gkey+"[^<>]*(\\(.*\\))*[^<(/>)>]*/>)");
             Matcher matcher = O_REGEX.matcher(s);	
 
-            while (matcher.find()) {
-                   obList.add(matcher.group(0));
+                while (matcher.find()) {
+                        obList.add(matcher.group(0));
             }	
 
             return obList;
@@ -447,7 +446,7 @@ public class SVGParser {
 	protected String findKey(String s, int index) { // Find nearest tag key (combine methods for better speed)		
 		
 		int start = s.indexOf('<', index);
-		if(start > -1) {
+		if(start > -1 && start < s.length()-9) {
                         if(s.indexOf("</", index) == start){
                             return loopFindKey(s, index);
                         }
@@ -540,7 +539,7 @@ public class SVGParser {
 			
 			String arrStr =  trans.substring(trans.indexOf("(")+1, trans.indexOf(")"));
 			double [] arr =  Arrays.stream(arrStr.split("[\\s,]"))
-					 .mapToDouble(Tool::toDouble)
+					 .mapToDouble(Double::parseDouble)
 					 .toArray();
 			int len = arr.length;
 			if(trans.indexOf("rotate") > -1) {
@@ -553,8 +552,7 @@ public class SVGParser {
 			}
 			else if(trans.indexOf("matrix")>-1) {                                         
 				if(len==6)
-                                    return Transform.affine(arr[0], arr[1], arr[2], arr[3], arr[4], arr[5]);
-                                
+					return Transform.affine(arr[0], arr[1], arr[2], arr[3], arr[4], arr[5]);
 			}
 			return null;
 		}
@@ -587,13 +585,17 @@ public class SVGParser {
             if(!cyS.isEmpty())
                 cy = Tool.toDouble(cyS.replace("%", ""))/100;
             if(!rS.isEmpty())
-                r =  Tool.toDouble(rS.replace("%", ""))/100;              
-            if(!fyS.isEmpty())
-                fy = Tool.toDouble(fyS.replace("%", ""))/100;           
+                r = Tool.toDouble(rS.replace("%", ""))/100;
+            
+                
+            if(!fyS.isEmpty()){
+                fy = Tool.toDouble(fyS.replace("%", ""))/100;                
+            }
             if(!fxS.isEmpty()){            	
                 fx = Tool.toDouble(fxS.replace("%", ""))/100; 
                
-                if(fx != 0.5) {               	 
+                if(fx != 0.5) { 
+               	 
                     fa = Math.atan((fy-0.5)/(fx-0.5))*180/Math.PI;
                     if(fx < 0.5)
                        fa += 180;
@@ -614,7 +616,6 @@ public class SVGParser {
             return lg;
         }
         protected LinearGradient getLinearGradient(String s){
-
             
             double x1 = 0, y1 = 0, x2 = 0, y2 = 0;
             String x1Str = getString(s,"x1").replace("%", "");
@@ -630,7 +631,6 @@ public class SVGParser {
             if(!y2Str.isEmpty())
                 y2 = Tool.toDouble(getString(s,"y2").replace("%", ""))/100;
 //            String spmd = getString(s, "spreadMethod");          
-
            
             List<Stop> sList = buildStopList(listObjects(getContent(s), "stop"));
             LinearGradient lg = new LinearGradient(x1, y1, x2, y2, true, CycleMethod.NO_CYCLE, sList);
@@ -648,8 +648,7 @@ public class SVGParser {
           
             return sList;
         }
-               
-       
+         
         
         protected SVGPath rectPath(double x, double y, double width, double height, double rx, double ry){
           
@@ -737,12 +736,9 @@ public class SVGParser {
 			sh.getTransforms().add(trans);	
                
         }
-        
-       
-    
-     		
+			
 	protected String SVG;			
-	protected StringBuffer gkey = new StringBuffer("((svg)|(g)|(clipPath)|(rect)|(circle)|(ellipse)|(line)|(polyline)|(polygon)|(path)|(text)|(defs))");
-	protected String[] keys = {"svg", "g", "clipPath", "polygon", "polyline", "rect", "line", "ellipse", "circle", "path", "text", "defs", "linearGradient", "radialGradient"};
+	private String gkey = "((svg)|(g)|(clipPath)|(rect)|(circle)|(ellipse)|(line)|(polyline)|(polygon)|(path)|(text)|(defs))";
+	private String[] keys = {"svg", "g", "clipPath", "polygon", "polyline", "rect", "line", "ellipse", "circle", "path", "text", "defs", "linearGradient", "radialGradient"};
 
 }
