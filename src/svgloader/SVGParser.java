@@ -67,8 +67,10 @@ public class SVGParser {
 	@param s String, the parsing string (e.g. <circle .. style="...."/>)
 	*/
 	public Shape shape(String s, String cas) { 
-		String attr = "";             
-                if(s.indexOf("<path") > -1 ) {                 
+            long start = System.nanoTime();
+            String attr = "";             
+                if(s.indexOf("<path") > -1 ) {   
+                    
                     SVGPath sh = new SVGPath();
                     attr = getAttributeString(s, "path")+cas;
 		    sh.setContent(svgPathContent(attr));		
@@ -76,7 +78,8 @@ public class SVGParser {
 		    sh.setStrokeLineCap(getStrokeLineCap(attr));
 		    sh.setStrokeLineJoin(getStrokeLineJoin(attr));
 		    sh.setStrokeMiterLimit(getStrokeMiterLimit(attr));	
-                    setStyle(sh, attr);                   
+                    setStyle(sh, attr);
+                  
                     return sh;
                    
 		}
@@ -148,6 +151,8 @@ public class SVGParser {
                     setStyle(sh, attr);              
                     return sh;					
 		}
+                
+                
                 return null;
 				
 	}
@@ -178,11 +183,11 @@ public class SVGParser {
 	@return double array with Viewbox 4 elements (x, y, width, height)
 	*/
 	public double[] viewBoxData(String s) {	
-		ArrayList<String> alStr = Tool.split(getString(s, "viewBox"), " ");
+		ArrayList<String> alStr = split(getString(s, "viewBox"), " ");
                 int sz = alStr.size();
                 double[] dArr = new double[sz];
                 for (int i = 0; i < sz; ++i) 
-                    dArr[i] = Tool.toDouble(alStr.get(i));
+                    dArr[i] = toDouble(alStr.get(i));
 		return dArr;
 		
 	}
@@ -197,7 +202,7 @@ public class SVGParser {
 			
 		String valStr = getString(s, key);	
 		if(!valStr.isEmpty())
-			return Tool.toDouble(valStr);		
+			return toDouble(valStr);		
 		return 0;		
 	}
 	
@@ -295,7 +300,7 @@ public class SVGParser {
 	public double opacityValue(String s, String key) {		
 		String valStr = getString(s, key);
 		if(!valStr.isEmpty())
-			return Tool.toDouble(valStr);
+			return toDouble(valStr);
 		return 1;
 	}
 	
@@ -432,8 +437,8 @@ public class SVGParser {
             Pattern O_REGEX = Pattern.compile("(<("+gkey+")[^<(/>)>]*(\\(.*\\))*[^<(/>)>]*>[^<(/>)>]*(</\\2>))|(<"+gkey+"[^<>]*(\\(.*\\))*[^<(/>)>]*/>)");
             Matcher matcher = O_REGEX.matcher(s);	
 
-                while (matcher.find()) {
-                        obList.add(matcher.group(0));
+            while (matcher.find()) {
+                   obList.add(matcher.group(0));
             }	
 
             return obList;
@@ -578,18 +583,17 @@ public class SVGParser {
                     fyS = getString(s,"fy");
              		
             if(!cxS.isEmpty())                
-                cx = Tool.toDouble(cxS.replace("%", ""))/100;
+                cx = toDouble(cxS.replace("%", ""))/100;
             if(!cyS.isEmpty())
-                cy = Tool.toDouble(cyS.replace("%", ""))/100;
+                cy = toDouble(cyS.replace("%", ""))/100;
             if(!rS.isEmpty())
-                r = Tool.toDouble(rS.replace("%", ""))/100;
-            
+                r =  toDouble(rS.replace("%", ""))/100;            
                 
             if(!fyS.isEmpty()){
-                fy = Tool.toDouble(fyS.replace("%", ""))/100;                
+                fy = toDouble(fyS.replace("%", ""))/100;                
             }
             if(!fxS.isEmpty()){            	
-                fx = Tool.toDouble(fxS.replace("%", ""))/100; 
+                fx = toDouble(fxS.replace("%", ""))/100; 
                
                 if(fx != 0.5) { 
                	 
@@ -621,13 +625,13 @@ public class SVGParser {
             String x2Str = getString(s,"x2").replace("%", "");
             String y2Str = getString(s,"y2").replace("%", "");
             if(!x1Str.isEmpty())
-                x1 = Tool.toDouble(x1Str)/100;
+                x1 = toDouble(x1Str)/100;
             if(!y1Str.isEmpty())
-                y1 = Tool.toDouble(getString(s,"y1").replace("%", ""))/100;
+                y1 = toDouble(getString(s,"y1").replace("%", ""))/100;
             if(!x2Str.isEmpty())
-                x2 = Tool.toDouble(getString(s,"x2").replace("%", ""))/100;
+                x2 = toDouble(getString(s,"x2").replace("%", ""))/100;
             if(!y2Str.isEmpty())
-                y2 = Tool.toDouble(getString(s,"y2").replace("%", ""))/100;
+                y2 = toDouble(getString(s,"y2").replace("%", ""))/100;
 //            String spmd = getString(s, "spreadMethod");          
 
            
@@ -731,10 +735,86 @@ public class SVGParser {
 		if(dArr != null)
 			sh.getStrokeDashArray().addAll(dArr);		
                 
-		Transform trans = getTransform(s);
-		if(trans != null)
-			sh.getTransforms().add(trans);	
+//		Transform trans = getTransform(s);
+//		if(trans != null)
+//			sh.getTransforms().add(trans);	
                
+        }
+        
+        private ArrayList<String> split(String S, String k) {
+            int b, i = 0;
+            int ls = S.length();
+            int lk = k.length();
+            ArrayList<String> al = new ArrayList<>();
+            OUT:for (b = 0; i < ls; ++i) {
+                if (S.charAt(i) == k.charAt(0)) {
+                    int l, j = i + 1;
+                    for (l = 1; l < lk && j < ls; ++l, ++j)
+                        if (S.charAt(j) != k.charAt(l)) continue OUT;
+                    if (l == lk) {
+                        String X = S.substring(b,j).trim();
+                        if (X.length() > 0) al.add(X);
+                        i = b = j;
+                    }
+                }
+            }
+            if (b < ls) {
+                String X = S.substring(b,ls).trim();
+                al.add(X);
+            }
+            return al;
+        }
+    
+        private  int toInt(String I) {
+            boolean neg;
+            int li, i = 0;
+            if (I.charAt(0) == '-'){
+                neg = true;
+                li = 1;
+            } else {
+                neg = false;
+                li = 0;
+            }
+            for (int b = I.length()-1, f = 1; b >= li; --b) {
+                i += (I.charAt(b)&0x0F)*f;
+                f *= 10;
+            }
+            return (neg? -i: i);
+        }
+        private double toDouble(String D) {
+            boolean neg;
+            double d = 0;
+            int li, i = 0;
+            if (D.charAt(0) == '-'){
+                neg = true;
+                li = 1;
+            } else {
+                neg = false;
+                li = 0;
+            }
+            if (D != null) {
+                int len = D.length();
+                for (int b = 0; b < len; ++b)
+                if (D.charAt(b) == '.') {
+                    double f = 10d;
+                    for (int e = b+1; e < len; ++e) {
+                        d += (double)(D.charAt(e)&0x0F)/f;
+                        f *= 10;
+                    }
+                    f = 1d;
+                    for (--b; b >= li; --b) {
+                        d += (double)(D.charAt(b)&0x0F)*f;
+                        f *= 10;
+                    }
+                    return (neg? -d:d);
+                }
+                double f = 1d;
+                for (int b = len-1; b >= li; --b) {
+                    d += (D.charAt(b)&0x0F)*f;
+                    f *= 10;
+                }
+            }
+            return (neg? -d:d);
         }
 			
 	protected String SVG;			
