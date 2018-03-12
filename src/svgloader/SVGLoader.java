@@ -84,7 +84,15 @@ public class SVGLoader extends SVGParser {
 				 g.setTranslateY(y);				
 				 attr = attr.replaceAll("(x=\"[0-9\\.]*\")|(y=\"[0-9\\.]*\")|(width=\"[^\"]*\")|(height=\"[^\"]*\")", "")+" "+cas;
                                  		 
-				List<String>  list = listObjects(cont); 
+				List<String> list;
+                                if(cont.indexOf("svg") < 0 || cont.indexOf("g") < 0){
+                                     if(cont.length() < 1000000)
+                                         list = listObjects(cont);
+                                     else
+                                         list = regexListObjects(cont); 
+                                }									 
+                                else
+				     list = listObjects(cont); 
                                  
 				 g.getChildren().addAll(buildObjectList(list, attr));
 				 
@@ -99,7 +107,15 @@ public class SVGLoader extends SVGParser {
 				String attr = getAttributeString(xml, "g")+cas;
 				 			
 				Group g = new Group();		
-				List<String> list = listObjects(cont); 			 				 
+				List<String> list;
+				if(cont.indexOf("svg") < 0 || cont.indexOf("g") < 0){
+                                     if(cont.length() < 1000000)
+                                         list = listObjects(cont);
+                                     else
+                                         list = regexListObjects(cont); 
+                                }									 
+                                else
+				     list = listObjects(cont); 			 				 
 				 g.getChildren().addAll(buildObjectList(list, attr));
 				 return g;
 			 }		

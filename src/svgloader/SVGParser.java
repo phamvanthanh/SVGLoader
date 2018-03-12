@@ -67,7 +67,7 @@ public class SVGParser {
 	@param s String, the parsing string (e.g. <circle .. style="...."/>)
 	*/
 	public Shape shape(String s, String cas) { 
-            long start = System.nanoTime();
+           
             String attr = "";             
                 if(s.indexOf("<path") > -1 ) {   
                     
@@ -183,11 +183,11 @@ public class SVGParser {
 	@return double array with Viewbox 4 elements (x, y, width, height)
 	*/
 	public double[] viewBoxData(String s) {	
-		ArrayList<String> alStr = split(getString(s, "viewBox"), " ");
+		ArrayList<String> alStr = Tool.split(getString(s, "viewBox"), " ");
                 int sz = alStr.size();
                 double[] dArr = new double[sz];
                 for (int i = 0; i < sz; ++i) 
-                    dArr[i] = toDouble(alStr.get(i));
+                    dArr[i] = Tool.toDouble(alStr.get(i));
 		return dArr;
 		
 	}
@@ -202,7 +202,7 @@ public class SVGParser {
 			
 		String valStr = getString(s, key);	
 		if(!valStr.isEmpty())
-			return toDouble(valStr);		
+			return Tool.toDouble(valStr);		
 		return 0;		
 	}
 	
@@ -300,7 +300,7 @@ public class SVGParser {
 	public double opacityValue(String s, String key) {		
 		String valStr = getString(s, key);
 		if(!valStr.isEmpty())
-			return toDouble(valStr);
+			return Tool.toDouble(valStr);
 		return 1;
 	}
 	
@@ -314,25 +314,25 @@ public class SVGParser {
 	public int svgObject(String[] S, String key, int index) {
 		
 		int start = S[0].indexOf("<"+key, index);
-		
+		int length = key.length();
 		String rst = "";
 		if(start > -1) {	
 			int close = isSelfClose(S[0], start);
 			if( close < 0) { 	// Not self close tag														
-				close = S[0].indexOf("/"+key+">", start)+key.length()+2; 	//First close		
+				close = S[0].indexOf("/"+key+">", start)+ length +2; 	//First close		
 
 				int oInd = start + key.length() + 1; 
 			
-				while(oInd < close && oInd > 0){
+				while(oInd < close){
 					int open = S[0].indexOf("<"+key, oInd); // next open
 					
-					if(open > -1 && open+key.length()+1 < close) {
+					if(open > -1 && open+ length + 1 < close) {
 					
-						oInd = open+key.length()+1;
+						oInd = open + length + 1;
 						if(isSelfClose(S[0], oInd) < 0 ) {
 							int c = S[0].indexOf("/"+key+">", close); //next close
 							if(c > -1) {
-								close = c+key.length()+2;	
+								close = c+ length +2;	
 							}
 							else {
 								System.out.println("SVG file contains errors");
@@ -383,8 +383,7 @@ public class SVGParser {
 
 		 int start = s.indexOf('>');
 		 int end = s.lastIndexOf('<');
-		 if(start > -1 && end > start) {
-                        
+		 if(start > -1 && end > start) {                        
 			 return s.substring(start+1, end);			 
 		 }			 
 		 return s;
@@ -448,8 +447,8 @@ public class SVGParser {
 	protected String findKey(String s, int index) { // Find nearest tag key (combine methods for better speed)		
 		
 		int start = s.indexOf('<', index);
-		if(start > -1 && start < s.length()-9) {
-                        if(s.indexOf("</", index) == start || s.indexOf("< /", index) == start){
+		if(start > -1) {
+                        if(s.indexOf("</", index) == start){
                             return loopFindKey(s, index);
                         }
                         else {
@@ -479,7 +478,7 @@ public class SVGParser {
         }
         	
 	protected String getAttributeString(String s, String key) { // Get all attribute string of a tag		
-		return s.substring(s.indexOf("<")+key.length()+1, s.indexOf(">"));
+		return s.substring(s.indexOf('<')+key.length()+1, s.indexOf('>'));
 	}	
 	public FillRule getFillRule(String s) { // Get fill rule attribute
 		
@@ -541,7 +540,7 @@ public class SVGParser {
 			
 			String arrStr =  trans.substring(trans.indexOf("(")+1, trans.indexOf(")"));
 			double [] arr =  Arrays.stream(arrStr.split("[\\s,]"))
-					 .mapToDouble(Double::parseDouble)
+					 .mapToDouble(Tool::toDouble)
 					 .toArray();
 			int len = arr.length;
 			if(trans.indexOf("rotate") > -1) {
@@ -554,7 +553,8 @@ public class SVGParser {
 			}
 			else if(trans.indexOf("matrix")>-1) {                                         
 				if(len==6)
-					return new Affine(arr[0], arr[1], arr[2], arr[3], arr[4], arr[5]);
+                                    return Transform.affine(arr[0], arr[1], arr[2], arr[3], arr[4], arr[5]);
+                                
 			}
 			return null;
 		}
@@ -583,20 +583,17 @@ public class SVGParser {
                     fyS = getString(s,"fy");
              		
             if(!cxS.isEmpty())                
-                cx = toDouble(cxS.replace("%", ""))/100;
+                cx = Tool.toDouble(cxS.replace("%", ""))/100;
             if(!cyS.isEmpty())
-                cy = toDouble(cyS.replace("%", ""))/100;
+                cy = Tool.toDouble(cyS.replace("%", ""))/100;
             if(!rS.isEmpty())
-                r =  toDouble(rS.replace("%", ""))/100;            
-                
-            if(!fyS.isEmpty()){
-                fy = toDouble(fyS.replace("%", ""))/100;                
-            }
+                r =  Tool.toDouble(rS.replace("%", ""))/100;              
+            if(!fyS.isEmpty())
+                fy = Tool.toDouble(fyS.replace("%", ""))/100;           
             if(!fxS.isEmpty()){            	
-                fx = toDouble(fxS.replace("%", ""))/100; 
+                fx = Tool.toDouble(fxS.replace("%", ""))/100; 
                
-                if(fx != 0.5) { 
-               	 
+                if(fx != 0.5) {               	 
                     fa = Math.atan((fy-0.5)/(fx-0.5))*180/Math.PI;
                     if(fx < 0.5)
                        fa += 180;
@@ -625,13 +622,13 @@ public class SVGParser {
             String x2Str = getString(s,"x2").replace("%", "");
             String y2Str = getString(s,"y2").replace("%", "");
             if(!x1Str.isEmpty())
-                x1 = toDouble(x1Str)/100;
+                x1 = Tool.toDouble(x1Str)/100;
             if(!y1Str.isEmpty())
-                y1 = toDouble(getString(s,"y1").replace("%", ""))/100;
+                y1 = Tool.toDouble(getString(s,"y1").replace("%", ""))/100;
             if(!x2Str.isEmpty())
-                x2 = toDouble(getString(s,"x2").replace("%", ""))/100;
+                x2 = Tool.toDouble(getString(s,"x2").replace("%", ""))/100;
             if(!y2Str.isEmpty())
-                y2 = toDouble(getString(s,"y2").replace("%", ""))/100;
+                y2 = Tool.toDouble(getString(s,"y2").replace("%", ""))/100;
 //            String spmd = getString(s, "spreadMethod");          
 
            
@@ -644,7 +641,7 @@ public class SVGParser {
             List<Stop> sList = new ArrayList<Stop>();
             
             for(String s: list){            	
-                sList.add(new Stop(Double.parseDouble(getString(s,"offset").replace("%", ""))/100, 
+                sList.add(new Stop(Tool.toDouble(getString(s,"offset").replace("%", ""))/100, 
                                     getColor(s, "stop-color", "stop-opacity")));
                
             }
@@ -735,88 +732,15 @@ public class SVGParser {
 		if(dArr != null)
 			sh.getStrokeDashArray().addAll(dArr);		
                 
-//		Transform trans = getTransform(s);
-//		if(trans != null)
-//			sh.getTransforms().add(trans);	
+		Transform trans = getTransform(s);
+		if(trans != null)
+			sh.getTransforms().add(trans);	
                
         }
         
-        private ArrayList<String> split(String S, String k) {
-            int b, i = 0;
-            int ls = S.length();
-            int lk = k.length();
-            ArrayList<String> al = new ArrayList<>();
-            OUT:for (b = 0; i < ls; ++i) {
-                if (S.charAt(i) == k.charAt(0)) {
-                    int l, j = i + 1;
-                    for (l = 1; l < lk && j < ls; ++l, ++j)
-                        if (S.charAt(j) != k.charAt(l)) continue OUT;
-                    if (l == lk) {
-                        String X = S.substring(b,j).trim();
-                        if (X.length() > 0) al.add(X);
-                        i = b = j;
-                    }
-                }
-            }
-            if (b < ls) {
-                String X = S.substring(b,ls).trim();
-                al.add(X);
-            }
-            return al;
-        }
+       
     
-        private  int toInt(String I) {
-            boolean neg;
-            int li, i = 0;
-            if (I.charAt(0) == '-'){
-                neg = true;
-                li = 1;
-            } else {
-                neg = false;
-                li = 0;
-            }
-            for (int b = I.length()-1, f = 1; b >= li; --b) {
-                i += (I.charAt(b)&0x0F)*f;
-                f *= 10;
-            }
-            return (neg? -i: i);
-        }
-        private double toDouble(String D) {
-            boolean neg;
-            double d = 0;
-            int li, i = 0;
-            if (D.charAt(0) == '-'){
-                neg = true;
-                li = 1;
-            } else {
-                neg = false;
-                li = 0;
-            }
-            if (D != null) {
-                int len = D.length();
-                for (int b = 0; b < len; ++b)
-                if (D.charAt(b) == '.') {
-                    double f = 10d;
-                    for (int e = b+1; e < len; ++e) {
-                        d += (double)(D.charAt(e)&0x0F)/f;
-                        f *= 10;
-                    }
-                    f = 1d;
-                    for (--b; b >= li; --b) {
-                        d += (double)(D.charAt(b)&0x0F)*f;
-                        f *= 10;
-                    }
-                    return (neg? -d:d);
-                }
-                double f = 1d;
-                for (int b = len-1; b >= li; --b) {
-                    d += (D.charAt(b)&0x0F)*f;
-                    f *= 10;
-                }
-            }
-            return (neg? -d:d);
-        }
-			
+     		
 	protected String SVG;			
 	protected StringBuffer gkey = new StringBuffer("((svg)|(g)|(clipPath)|(rect)|(circle)|(ellipse)|(line)|(polyline)|(polygon)|(path)|(text)|(defs))");
 	protected String[] keys = {"svg", "g", "clipPath", "polygon", "polyline", "rect", "line", "ellipse", "circle", "path", "text", "defs", "linearGradient", "radialGradient"};
