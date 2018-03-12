@@ -358,9 +358,13 @@ public class SVGParser {
 	 * Return Group contains all SVG object
 	 */
 		   
-	public List<Node> getObject() {		
-		List<String> list = listObjects(fileContent);                
-		return buildObjectList(list, "");
+	public List<Node> getObject() {	
+            long start = System.currentTimeMillis();
+            	List<String> list = listObjects(fileContent);                
+		List<Node> ob =  buildObjectList(list, "");         
+            long end = System.currentTimeMillis();
+            System.out.println("Time build: "+(end-start));	
+            return ob;
 	}
 	
 	/**
@@ -373,35 +377,16 @@ public class SVGParser {
 		List<Node> oList = new ArrayList<Node>();	
                 
 		for(String el: list) {	
-		    Thread th = new Thread(new Runnable(){
-                        @Override
-                        public void run() {
-
-                            {
-                                synchronized(this) {
-
-                                    Node n = buildObject(el, cas);
-                                    if(n!=null)
-                                    oList.add(n);
-                                }						
-                           }					
-                        }
-		    	
-		    });
-		    th.start();
-		    try {
-				th.join();
-			} catch (Exception e) {
-
-			}
+                    Node n = buildObject(el, cas);
+                    if(n!=null)
+                    oList.add(n);  
 			
 		}
 
 		return oList;
 	}
 	public  Node buildObject(String s, String cas) {
-		String key = findKey(s, 0); 
-	
+		String key = findKey(s, 0); 	
 		if(key.equals("svg")) {
 			 
 			 String cont = getContent(s);
@@ -718,7 +703,7 @@ public class SVGParser {
             double y1 = Double.parseDouble(getString(s,"y1").replace("%", ""))/100;
             double x2 = Double.parseDouble(getString(s,"x2").replace("%", ""))/100;
             double y2 = Double.parseDouble(getString(s,"y2").replace("%", ""))/100;
-            String spmd = getString(s, "spreadMethod");          
+            String spmd = getString(s, "spreadMethod");  //WHAT IS THIS FOR?        
            
             List<Stop> sList = buildStopList(listObjects(getContent(s), "stop"));
             LinearGradient lg = new LinearGradient(x1, y1, x2, y2, true, CycleMethod.NO_CYCLE, sList);
