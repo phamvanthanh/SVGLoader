@@ -259,7 +259,7 @@ public class SVGParser {
                      
                         if(color.indexOf("url") > -1){                            
                             String fId = color.substring(color.indexOf("#")+1, color.indexOf(")"));
-                            String defs = chaseOut(SVG, fId);                           
+                            String defs = chaseOut(SVG, fId, aKeys);                           
                             if(defs.contains("<linearGradient"))
                                 return getLinearGradient(defs);
                             else if(defs.contains("<radialGradient")){                             
@@ -545,7 +545,7 @@ public class SVGParser {
 		return null;
 	
 	}
-        protected String chaseOut(String s, String key){
+        protected String chaseOut(String s, String key, String[] keys){
             int pos = s.indexOf(key);
             
             if(pos > 0){
@@ -771,8 +771,7 @@ public class SVGParser {
            return s;
                     
         }
-       
-			
+       			
 	protected String SVG;	
 	protected String[] keys = {"svg", "g", "clipPath", "polygon", "polyline", "rect", "line", "ellipse", "circle", "path", "text", "defs", "linearGradient", "radialGradient"}; //
         private String[] aKeys = {"defs", "linearGradient", "radialGradient"};
