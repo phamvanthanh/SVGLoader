@@ -396,7 +396,7 @@ public class SVGParser {
 		
 		while(index < length)
 		{
-			key = findKey(s, index);
+			key = findKey(s, index, keys);
 			
 			if(!key.isEmpty())			
 			{
@@ -429,12 +429,12 @@ public class SVGParser {
             return list;
         }
 
-	protected String findKey(String s, int index) { // Find nearest tag key (combine methods for better speed)		
+	protected String findKey(String s, int index, String[] keys) { // Find nearest tag key (combine methods for better speed)		
 		
 		int start = s.indexOf('<', index);
 		if(start > -1 && start < s.length()-9) {
                         if(s.indexOf("</", index) == start){
-                            return loopFindKey(s, index);
+                            return loopFindKey(s, index, keys);
                         }
                         else {
                             int end1 = s.indexOf(' ', start+1);
@@ -449,7 +449,7 @@ public class SVGParser {
 		 
 	}
         
-        private String loopFindKey(String s, int index){
+        private String loopFindKey(String s, int index, String[] keys){
             	int ind = s.length(); int curInd = -1; String key = ""; 
 		int length = keys.length;
 		for(int i =0; i< length; i++) {
@@ -550,7 +550,7 @@ public class SVGParser {
             
             if(pos > 0){
                 int begin = s.lastIndexOf('<', pos);
-                String tag = findKey(s, begin);
+                String tag = findKey(s, begin, keys);
                 String[] S = {s, tag};
                 svgObject(S, tag, begin);
                 return S[1];          
@@ -774,7 +774,7 @@ public class SVGParser {
        
 			
 	protected String SVG;	
-	private String[] keys = {"svg", "g", "clipPath", "polygon", "polyline", "rect", "line", "ellipse", "circle", "path", "text", "defs", "linearGradient", "radialGradient"}; //
+	protected String[] keys = {"svg", "g", "clipPath", "polygon", "polyline", "rect", "line", "ellipse", "circle", "path", "text", "defs", "linearGradient", "radialGradient"}; //
         private String[] aKeys = {"defs", "linearGradient", "radialGradient"};
 }
 

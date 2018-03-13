@@ -69,7 +69,7 @@ public class SVGLoader extends SVGParser {
 	 * idx is the current index (before submerging into next recursive level)    
 	 * */    
 	public List<Node> createSVG(String xml, String cas) {        
-		String key = findKey(xml, 0); 
+		String key = findKey(xml, 0, keys); 
                 List<Node> nList = new ArrayList<Node>();
                 Shape shape = null;
 		if(key.equals("svg")) {
