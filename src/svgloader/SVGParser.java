@@ -50,14 +50,15 @@ public class SVGParser {
 		}
 		
             long start = System.currentTimeMillis();
-            SVG = (new String(buf, 0, length)).replaceAll("[\\n]+"," ")
+            SVG = (new String(buf, 0, length)).replaceAll("[\\t\\n\\r]+"," ")
 //                                                      .replaceAll(" {2,}", " ")
 //                                                      .replaceAll("\\<\\?xml.+\\?\\>"," ")
 //                                                      .replaceAll("\\<\\?metadata.+\\?\\>"," ")
-                                                      .replaceAll("<!--[\\s\\S]*?-->", "")
+//                                                      .replaceAll("<!--[\\s\\S]*?-->", "")
 //                                                      .replaceAll("<!DOCTYPE[^>]*>", "")
-                                                      .replaceAll("xmlns[^\\s]*\""," ")
-                                                      .trim();
+//                                                      .replaceAll("xmlns[^\\s]*\""," ")
+                                                           ;
+                                                     
             SVG = removeWerds(SVG);
             long end = System.currentTimeMillis();
             System.out.println("Replace time: "+ (end-start));
@@ -70,88 +71,70 @@ public class SVGParser {
 	@param S JFX-Shape (Rectangle, Ellipse, Circle, etc.)
 	@param s String, the parsing string (e.g. <circle .. style="...."/>)
 	*/
-        private ExecutorService executor = Executors.newCachedThreadPool();
-	public Shape shape(String s, String cas) { 
+//        private ExecutorService executor = Executors.newCachedThreadPool();
+	public void shape(SVGPath sh, String s, String cas) { 
 		String attr = "";             
                 if(s.indexOf("<path") > -1 ) {                 
-                    SVGPath sh = new SVGPath();
-                    attr = getAttributeString(s, "path")+cas;
-                    executor.submit(new StyleBuilder(sh, attr, this)); 
-//                    pathStyle(sh, attr);                   
-                    return sh;
+                   
+                    attr = getAttributeString(s, "path")+cas;//                  
+                    pathStyle(sh, attr);                   
+                   
                    
 		}
                 else if(s.indexOf("<rect") > -1) {
                     
-                    attr = getAttributeString(s, "rect")+cas;             
-                    SVGPath sh = rectPath(getValue(attr, "x"), 
-                                          getValue(attr, "y"), 
-                                          getValue(attr, "width"),
-                                          getValue(attr, "height"),
-                                          getValue(attr, "rx"),
-                                          getValue(attr, "ry"));
-		    setStyle(sh, attr);
-                    return sh;
+                    attr = getAttributeString(s, "rect")+cas;
+                    rectStyle(sh, attr);
+
+                    
                     
 		}
                 else if(s.indexOf("<circle") > -1) {
                     attr = getAttributeString(s, "circle")+cas;
-                    SVGPath sh = circlePath(getValue(attr, "cx"),
-                                            getValue(attr, "cy"),
-                                            getValue(attr, "r"));			
-                    setStyle(sh, attr);
-                    return sh;
+                    circleStyle(sh, attr);
+                                    
 		}
                 else if(s.indexOf("<ellipse") > -1) {
                     attr = getAttributeString(s, "ellipse")+cas;
-                    SVGPath sh = ellipsePath(getValue(attr, "cx"),
-                                             getValue(attr, "cy"),
-                                             getValue(attr, "rx"),
-                                             getValue(attr, "ry"));
-                    attr = getAttributeString(s, "ellipse")+cas;		
-                    setStyle(sh, attr);                       
-                    return sh;
+                    ellipseStyle(sh, attr);
+                                       
+                   
 		}
                 else if(s.indexOf("<line") > -1) {
                     attr = getAttributeString(s, "line")+cas;
-                    SVGPath sh = linePath(  getValue(attr, "x1"),
-                                            getValue(attr, "y1"),
-                                            getValue(attr, "x2"),
-                                            getValue(attr, "y2"));
-                    setStyle(sh, attr);
-                    return sh;		
+                    lineStyle(sh, attr);
+                                	
                     
 		}
                 else if(s.indexOf("<polyline") > -1) {
                     attr = getAttributeString(s, "polyline")+cas;
-                    SVGPath sh = polylinePath(doubleArray(getString(attr, "points")));
-                    setStyle(sh, attr);
-                    return sh;
+                    polylineStyle(sh, attr);
+                               
 		}
                 else if(s.indexOf("<polygon") > -1) {
                     attr = getAttributeString(s, "polygon")+cas;
-                    SVGPath sh = polygonPath(doubleArray(getString(attr, "points")));
-		    setStyle(sh, attr);
-                    return sh;
+                    polygonStyle(sh, attr);
+                                     
 		}
 		
-                else if(s.indexOf("<text") > -1) {
-                    attr = getAttributeString(s, "text")+cas;
-                    Text sh = new Text();
-                    sh.setText(getString(s, "text"));
-                    sh.setX(getValue(attr, "x"));
-                    sh.setY(getValue(attr, "y"));
-                    double fs = getValue(attr, "font-size");
-			if(!(fs > 0.0001))
-				fs = 14; // Default font size
-             
-		    sh.setFont(Font.font(getString(attr, "font-family"), fs));
-                    setStyle(sh, attr);              
-                    return sh;					
-		}
-                return null;
+  
+              
 				
 	}
+        public void text(Text text, String s, String cas) { 
+                String attr = getAttributeString(s, "text")+cas;
+                   
+                text.setText(getString(s, "text"));
+                text.setX(getValue(attr, "x"));
+                text.setY(getValue(attr, "y"));
+                double fs = getValue(attr, "font-size");
+                    if(!(fs > 0.0001))
+                            fs = 14; // Default font size
+
+                text.setFont(Font.font(getString(attr, "font-family"), fs));
+                setStyle(text, attr);              
+                 
+        }
 	/**
 	search and parse double array for Polyline and Polygon
 	@param s String, the parsing string
@@ -632,74 +615,101 @@ public class SVGParser {
                 sList.add(new Stop(Tool.toDouble(getString(s,"offset").replace("%", ""))/100, 
                                     getColor(s, "stop-color", "stop-opacity")));
                
-            }
-          
+            }          
             return sList;
         }
         
-        protected SVGPath path(String d){
-             SVGPath p = new SVGPath();
-             p.setContent(d);
-             return p;
+        public void pathStyle(SVGPath sh, String attr){          
+           
+            sh.setContent(svgPathContent(attr));		
+            sh.setFillRule(getFillRule(attr));
+            sh.setStrokeLineCap(getStrokeLineCap(attr));
+            sh.setStrokeLineJoin(getStrokeLineJoin(attr));
+            sh.setStrokeMiterLimit(getStrokeMiterLimit(attr));            
+            setStyle(sh, attr);
         }
         
-        protected SVGPath rectPath(double x, double y, double width, double height, double rx, double ry){
+        protected void rectStyle(SVGPath shape, String attr){
+             double x = getValue(attr, "x"), 
+                    y = getValue(attr, "y"), 
+                    width = getValue(attr, "width"),
+                    height = getValue(attr, "height"),
+                    rx = getValue(attr, "rx"),
+                    ry = getValue(attr, "ry");
+      
           
             String c1 = " A"+rx+" "+ry+" "+45+" "+0+" "+1+" "+(x+rx)+" "+(y);            
             String c2 = " A"+rx+" "+ry+" "+135+" "+0+" "+1+" "+(x+width)+" "+(y+ry);
             String c3 = " A"+rx+" "+ry+" "+90+" "+0+" "+1+" "+(x+width-rx)+" "+(y+height);
             String c4 = " A"+rx+" "+ry+" "+135+" "+0+" "+1+" "+(x)+" "+(y+height-ry); 
-            SVGPath p = new SVGPath();
-            p.setContent("M"+x+","+(y+ry)+ c1+
+         
+            shape.setContent("M"+x+","+(y+ry)+ c1+
                          " L"+(x+width-rx)+","+y+c2+
                          " L"+(x+width)+","+(y+height-ry)+c3+
                          " L"+(x+rx)+","+(y+height)+c4+
                          " z");
-            return p;
+            setStyle(shape, attr);
+      
+        }
+        private void polylineStyle(SVGPath shape, String attr){
+            double[] points = doubleArray(getString(attr, "points"));
+            int length = points.length;
+            String s = "M"+points[0]+","+points[1];
+            for(int i = 2; i < length; i = i+2){
+                 s +=" L"+points[i]+","+points[i+1];
+            }
+            SVGPath p = new SVGPath();
+            shape.setContent(s);
+            setStyle(shape, attr);  
+        }
+        private void polygonStyle(SVGPath shape, String attr){
+          
+            double[] points = doubleArray(getString(attr, "points"));		 
+            int length = points.length;
+            String s = "M"+points[0]+","+points[1];
+            for(int i = 2; i < length; i = i+2){
+                s +=" L"+points[i]+","+points[i+1];
+            }
+         
+            shape.setContent(s+" z");
+            setStyle(shape, attr);   
+        }
+        private void lineStyle(SVGPath shape, String attr){
+
+            double x1 = getValue(attr, "x1"),
+                   y1 = getValue(attr, "y1"),
+                   x2 = getValue(attr, "x2"),
+                   y2 = getValue(attr, "y2");
+                  	
+            shape.setContent("M"+x1+","+y1+" L"+x2+","+y2);
+            setStyle(shape, attr);
            
         }
-        private SVGPath polylinePath(double[] points){
-           int length = points.length;
-           String s = "M"+points[0]+","+points[1];
-           for(int i = 2; i < length; i = i+2){
-                s +=" L"+points[i]+","+points[i+1];
-           }
-           SVGPath p = new SVGPath();
-           p.setContent(s);
-           return p;
-        }
-        private SVGPath polygonPath(double[] points){
-           int length = points.length;
-           String s = "M"+points[0]+","+points[1];
-           for(int i = 2; i < length; i = i+2){
-                s +=" L"+points[i]+","+points[i+1];
-           }
-           SVGPath p = new SVGPath();
-           p.setContent(s+" z");
-           return p;
-        }
-        private SVGPath linePath(double x1, double y1, double x2, double y2){
-            SVGPath p = new SVGPath();
-            p.setContent("M"+x1+","+y1+" L"+x2+","+y2);
-            return p;
-        }
-        private SVGPath circlePath(double cx, double cy, double r){
+        private void circleStyle(SVGPath shape, String attr){
+     
+            double cx = getValue(attr, "cx"),
+                   cy = getValue(attr, "cy"),
+                   r = getValue(attr, "r");
             String s = "M " + (cx-r) + ", "+cy+
                       " a"+r+","+r+ " 0 1,0 "+(2*r)+",0"+
-                      " a "+r+","+r+ " 0 1,0 "+ "-"+(2*r)+",0";  
-		
-            SVGPath p = new SVGPath();
-            p.setContent(s);
-            return p;
+                      " a "+r+","+r+ " 0 1,0 "+ "-"+(2*r)+",0"; 
+            shape.setContent(s);
+            setStyle(shape, attr);
           
         }
-        private SVGPath ellipsePath(double cx, double cy, double rx, double ry){
+        private void ellipseStyle(SVGPath shape, String attr){
+           
+            double cx = getValue(attr, "cx"),
+                   cy = getValue(attr, "cy"),
+                   rx = getValue(attr, "rx"),
+                   ry = getValue(attr, "ry");            
+                   	
             String s = "M " + (cx-rx) + ", "+cy+
 			" a"+rx+","+ry+ " 0 1,0 "+ (2*rx)+",0"+
 			" a "+rx+","+ry+ " 0 1,0 "+(-2*rx)+",0";         
-            SVGPath p = new SVGPath();
-            p.setContent(s);         
-            return p;
+        
+            shape.setContent(s);         
+            setStyle(shape, attr);
              
         }
         private void setStyle(Shape sh, String s){
@@ -729,15 +739,7 @@ public class SVGParser {
 			sh.getTransforms().add(trans);	
                
         }
-        public void pathStyle(SVGPath sh, String attr){          
-           
-            sh.setContent(svgPathContent(attr));		
-            sh.setFillRule(getFillRule(attr));
-            sh.setStrokeLineCap(getStrokeLineCap(attr));
-            sh.setStrokeLineJoin(getStrokeLineJoin(attr));
-            sh.setStrokeMiterLimit(getStrokeMiterLimit(attr));            
-            setStyle(sh, attr);
-        }
+        
          protected boolean validateAttr(String attr){
             if(attr.isEmpty())
                 return false;
@@ -769,6 +771,30 @@ public class SVGParser {
             index = s.indexOf("<!DOCTYPE");            
             if(index > -1)
                 s = s.replace(s.substring(index, s.indexOf(">", index)+1), " ");
+            
+            index = s.indexOf("xmlns:dc=\"");
+            if(index > -1)
+                s= s.replace(s.substring(index, s.indexOf("\"", index+11)), " ");
+            
+            index = s.indexOf("xmlns=\"");
+            if(index > -1)
+                s= s.replace(s.substring(index, s.indexOf("\"", index+8)), " ");
+            
+            index = s.indexOf("xmlns:dc=\"");
+            if(index > -1)
+                s= s.replace(s.substring(index, s.indexOf("\"", index+11)), " ");
+            
+            index = s.indexOf("xmlns:rdf=\"");
+            if(index > -1)
+                s= s.replace(s.substring(index, s.indexOf("\"", index+13)), " ");
+            
+              index = s.indexOf("xmlns:svg=\"");
+            if(index > -1)
+                s= s.replace(s.substring(index, s.indexOf("\"", index+13)), " ");
+            
+              index = s.indexOf("xmlns:xlink=\"");
+            if(index > -1)
+                s= s.replace(s.substring(index, s.indexOf("\"", index+16)), " ");
             
            return s;
                     

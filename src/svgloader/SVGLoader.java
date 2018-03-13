@@ -7,11 +7,14 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+
 import javafx.scene.Group;
 import javafx.scene.Node;
-import javafx.scene.shape.Shape;
+
 
 import javafx.scene.layout.Pane;
+import javafx.scene.shape.SVGPath;
+import javafx.scene.text.Text;
 
 public class SVGLoader extends SVGParser {   
 	/**    Constructor    
@@ -68,10 +71,11 @@ public class SVGLoader extends SVGParser {
 	 * XML is the string content of SVG document (see SVGParser Constructor)    
 	 * idx is the current index (before submerging into next recursive level)    
 	 * */    
+        private ExecutorService executor = Executors.newCachedThreadPool();
 	public List<Node> createSVG(String xml, String cas) {        
 		String key = findKey(xml, 0, keys); 
                 List<Node> nList = new ArrayList<Node>();
-
+        
 		if(key.equals("svg")) {
 			 
 			 String cont = getContent(xml);
@@ -129,14 +133,22 @@ public class SVGLoader extends SVGParser {
                  else if(key.equals("defs")){
                      return nList;
                  }
+                 else if(key.equals("text")){
+                    Text text = new Text();
+                    nList.add(text);
+                    executor.submit(new TextBuilder(text, xml, cas, this));
+                   
+//                    executor.awaitTermination(5, TimeUnit.MINUTES);
+                    return nList;     
+                 }
 		 else if(!key.equals("svg") && !key.equals("g") && !key.isEmpty()) {                       
-          
-                         Shape sh =  shape(xml, cas);                 
-                        if(sh != null)
-                            nList.add(sh);
+                    SVGPath shape = new SVGPath();
+                    nList.add(shape);
+                    executor.submit(new ShapeBuilder(shape, xml, cas, this));
+                 
+                    return nList;          
                      
                      
-                     return nList;
 		 }
 		 return nList;
 	}
@@ -191,17 +203,35 @@ public class SVGLoader extends SVGParser {
 class ShapeBuilder implements Runnable {
     private String xml;
     private String cascade;
-    private List<Node> list;
     private SVGLoader svgloader;
-    private int index;
-    ShapeBuilder(Shape shape, String s, String cas, SVGLoader loader){
+    private SVGPath sh;
+    
+    ShapeBuilder(SVGPath shape, String s, String cas, SVGLoader loader){
         xml = s;
         cascade = cas;
-
+        svgloader = loader;
+        sh = shape;
     }
-   
+    @Override
     public void run() {
-        
+        svgloader.shape(sh, xml, cascade);
          
+    }
+}
+class TextBuilder implements Runnable {
+    private String xml;
+    private String cascade;
+    private SVGLoader svgloader;
+    private Text sh;
+    
+    TextBuilder(Text shape, String s, String cas, SVGLoader loader){
+        xml = s;
+        cascade = cas;
+        svgloader = loader;
+        sh = shape;
+    }
+    @Override
+    public void run() {
+        svgloader.text(sh, xml, cascade);         
     }
 }
