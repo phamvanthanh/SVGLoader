@@ -6,9 +6,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 import javafx.scene.paint.RadialGradient;
 import javafx.scene.paint.LinearGradient;
@@ -34,7 +31,7 @@ public class SVGParser {
 	@exception Java generic Exception if suffix is neither .svg, nor .svgz or the content does
 	not contain any block starting with <svg and ending with </svg>
 	*/
-       
+
 	public SVGParser(String svgName) throws Exception {
 		
                 byte[] buf = null;
@@ -52,22 +49,19 @@ public class SVGParser {
 			length = inFile.read(buf);
 		}
 		
-
-            SVG = (new String(buf, 0, length));
             long start = System.currentTimeMillis();
-            SVG = SVG
-                            .replaceAll("[\\n]+"," ")
-//                            .replaceAll(" {2,}", " ")                                                  
-                            .replaceAll("\\<\\?metadata.+\\?\\>"," ")
-                            .replaceAll("<!--[\\s\\S]*?-->", "")                                                  
-//                            .replaceAll("xmlns[^\\s]*\""," ")
-                            .trim();
-            SVG = removeWerds(SVG);      
-            
-            long end = System.currentTimeMillis();  
-            System.out.println(SVG);
-            System.out.println("Replace time: "+(end-start));
-          
+            SVG = (new String(buf, 0, length)).replaceAll("[\\n]+"," ")
+//                                                      .replaceAll(" {2,}", " ")
+//                                                      .replaceAll("\\<\\?xml.+\\?\\>"," ")
+//                                                      .replaceAll("\\<\\?metadata.+\\?\\>"," ")
+                                                      .replaceAll("<!--[\\s\\S]*?-->", "")
+//                                                      .replaceAll("<!DOCTYPE[^>]*>", "")
+                                                      .replaceAll("xmlns[^\\s]*\""," ")
+                                                      .trim();
+            SVG = removeWerds(SVG);
+            long end = System.currentTimeMillis();
+            System.out.println("Replace time: "+ (end-start));
+//            System.out.println(SVG);
 			 			
 			  
 	}
@@ -76,78 +70,73 @@ public class SVGParser {
 	@param S JFX-Shape (Rectangle, Ellipse, Circle, etc.)
 	@param s String, the parsing string (e.g. <circle .. style="...."/>)
 	*/
-         ExecutorService executor = Executors.newCachedThreadPool();
+        private ExecutorService executor = Executors.newCachedThreadPool();
 	public Shape shape(String s, String cas) { 
 		String attr = "";             
                 if(s.indexOf("<path") > -1 ) {                 
                     SVGPath sh = new SVGPath();
-                    attr = getAttributeString(s, "path") + cas;    
-                    executor.submit(new StyleBuilder(sh, attr, this));      
-                   
+                    attr = getAttributeString(s, "path")+cas;
+                    executor.submit(new StyleBuilder(sh, attr, this)); 
+//                    pathStyle(sh, attr);                   
                     return sh;
                    
 		}
                 else if(s.indexOf("<rect") > -1) {
                     
-                    attr = getAttributeString(s, "rect") + cas;             
+                    attr = getAttributeString(s, "rect")+cas;             
                     SVGPath sh = rectPath(getValue(attr, "x"), 
                                           getValue(attr, "y"), 
                                           getValue(attr, "width"),
                                           getValue(attr, "height"),
                                           getValue(attr, "rx"),
                                           getValue(attr, "ry"));
-      
 		    setStyle(sh, attr);
-                    
                     return sh;
                     
 		}
                 else if(s.indexOf("<circle") > -1) {
-                    attr = getAttributeString(s, "circle") + cas;
+                    attr = getAttributeString(s, "circle")+cas;
                     SVGPath sh = circlePath(getValue(attr, "cx"),
                                             getValue(attr, "cy"),
                                             getValue(attr, "r"));			
                     setStyle(sh, attr);
-                   
                     return sh;
 		}
                 else if(s.indexOf("<ellipse") > -1) {
-                    attr = getAttributeString(s, "ellipse") + cas;
+                    attr = getAttributeString(s, "ellipse")+cas;
                     SVGPath sh = ellipsePath(getValue(attr, "cx"),
                                              getValue(attr, "cy"),
                                              getValue(attr, "rx"),
                                              getValue(attr, "ry"));
-                    attr = getAttributeString(s, "ellipse") + cas;		
-                    setStyle(sh, attr); 
-                   
+                    attr = getAttributeString(s, "ellipse")+cas;		
+                    setStyle(sh, attr);                       
                     return sh;
 		}
                 else if(s.indexOf("<line") > -1) {
-                    attr = getAttributeString(s, "line") + cas;
+                    attr = getAttributeString(s, "line")+cas;
                     SVGPath sh = linePath(  getValue(attr, "x1"),
                                             getValue(attr, "y1"),
                                             getValue(attr, "x2"),
                                             getValue(attr, "y2"));
                     setStyle(sh, attr);
-                   
                     return sh;		
                     
 		}
                 else if(s.indexOf("<polyline") > -1) {
-                    attr = getAttributeString(s, "polyline") + cas;
+                    attr = getAttributeString(s, "polyline")+cas;
                     SVGPath sh = polylinePath(doubleArray(getString(attr, "points")));
-                    setStyle(sh, attr);                   
+                    setStyle(sh, attr);
                     return sh;
 		}
                 else if(s.indexOf("<polygon") > -1) {
-                    attr = getAttributeString(s, "polygon") + cas;
+                    attr = getAttributeString(s, "polygon")+cas;
                     SVGPath sh = polygonPath(doubleArray(getString(attr, "points")));
-		    setStyle(sh, attr);                   
+		    setStyle(sh, attr);
                     return sh;
 		}
 		
                 else if(s.indexOf("<text") > -1) {
-                    attr = getAttributeString(s, "text") + cas;
+                    attr = getAttributeString(s, "text")+cas;
                     Text sh = new Text();
                     sh.setText(getString(s, "text"));
                     sh.setX(getValue(attr, "x"));
@@ -157,7 +146,7 @@ public class SVGParser {
 				fs = 14; // Default font size
              
 		    sh.setFont(Font.font(getString(attr, "font-family"), fs));
-                    setStyle(sh, attr);                  
+                    setStyle(sh, attr);              
                     return sh;					
 		}
                 return null;
@@ -220,19 +209,18 @@ public class SVGParser {
 	@return String the content of the given key
 	*/
 	public String getString(String s, String key) {
-               //BE CAREFUL WITH THIS
-               
+
 		int index = key.length();
-		if(s.indexOf(key+"=\"") > -1) {
+		if(s.indexOf(" "+key+"=\"") > -1) {
 			index += s.indexOf(" "+key+"=\"")+3;
 			return s.substring(index, s.indexOf("\"", index));
 		}
 		
 		else if(s.indexOf(key+":") > -1) { //CASE OF CSS FORMAT
 			
-			if(s.indexOf("style")>-1)  
-                            s = getString(s, "style")+";";
-                  			
+			if(s.indexOf("style")>-1)
+				s = getString(s, "style")+";";
+			
 			int ind = s.indexOf(key+":");
 			
 			if(ind > -1) {
@@ -265,8 +253,8 @@ public class SVGParser {
 	*/
 	public Paint getColor(String s, String key) {
 		
-		String color = getString(s, key);
-                
+		String color = getString(s, key);		
+	
 		if (!color.isEmpty()) {
                      
                         if(color.indexOf("url") > -1){                            
@@ -440,20 +428,6 @@ public class SVGParser {
 
             return list;
         }
-	
-//	THIS FUNCTION MAY USE FOR FLAT SVG STRUCTURE
-	protected List<String> regexListObjects(String s) { // Get tag list (for flat svg structure)
-            List<String> obList = new ArrayList<String>();
-            Pattern O_REGEX = Pattern.compile("(<("+gkey+")[^<(/>)>]*(\\(.*\\))*[^<(/>)>]*>[^<(/>)>]*(</\\2>))|(<"+gkey+"[^<>]*(\\(.*\\))*[^<(/>)>]*/>)");
-            Matcher matcher = O_REGEX.matcher(s);	
-
-                while (matcher.find()) {
-                        obList.add(matcher.group(0));
-            }	
-
-            return obList;
-	}
-	
 
 	protected String findKey(String s, int index) { // Find nearest tag key (combine methods for better speed)		
 		
@@ -660,7 +634,12 @@ public class SVGParser {
           
             return sList;
         }
-         
+        
+        protected SVGPath path(String d){
+             SVGPath p = new SVGPath();
+             p.setContent(d);
+             return p;
+        }
         
         protected SVGPath rectPath(double x, double y, double width, double height, double rx, double ry){
           
@@ -722,7 +701,7 @@ public class SVGParser {
              
         }
         private void setStyle(Shape sh, String s){
-                
+               
                 if(getColor(s, "stroke") == null)
                     sh.setFill(null);    
                 else
@@ -757,7 +736,7 @@ public class SVGParser {
             sh.setStrokeMiterLimit(getStrokeMiterLimit(attr));            
             setStyle(sh, attr);
         }
-        protected boolean validateAttr(String attr){
+         protected boolean validateAttr(String attr){
             if(attr.isEmpty())
                 return false;
             else if(attr.indexOf("x=")>-1)
@@ -794,10 +773,9 @@ public class SVGParser {
         }
        
 			
-	protected String SVG;			
-	private String gkey = "((svg)|(g)|(clipPath)|(rect)|(circle)|(ellipse)|(line)|(polyline)|(polygon)|(path)|(text)|(defs))";
-	private String[] keys = {"svg", "g", "clipPath", "polygon", "polyline", "rect", "line", "ellipse", "circle", "path", "text", "defs", "linearGradient", "radialGradient"};
-
+	protected String SVG;	
+	private String[] keys = {"svg", "g", "clipPath", "polygon", "polyline", "rect", "line", "ellipse", "circle", "path", "text", "defs", "linearGradient", "radialGradient"}; //
+        private String[] aKeys = {"defs", "linearGradient", "radialGradient"};
 }
 
 class StyleBuilder implements Runnable {

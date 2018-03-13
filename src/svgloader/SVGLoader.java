@@ -71,6 +71,7 @@ public class SVGLoader extends SVGParser {
 	public List<Node> createSVG(String xml, String cas) {        
 		String key = findKey(xml, 0); 
                 List<Node> nList = new ArrayList<Node>();
+                Shape shape = null;
 		if(key.equals("svg")) {
 			 
 			 String cont = getContent(xml);
@@ -182,26 +183,20 @@ public class SVGLoader extends SVGParser {
 
 }
 
-class NodeBuilder implements Runnable {
+class ShapeBuilder implements Runnable {
     private String xml;
     private String cascade;
     private List<Node> list;
     private SVGLoader svgloader;
     private int index;
-    NodeBuilder(List<Node> lst, String xmlStr, String cas, SVGLoader loader, int ind){
-        list = lst;
-        svgloader = loader;
-        xml = xmlStr;
+    ShapeBuilder(Shape shape, String s, String cas, SVGLoader loader){
+        xml = s;
         cascade = cas;
-        index = ind;
+
     }
    
     public void run() {
-        List<Node> nl = svgloader.createSVG(xml, cascade);
-        if(!nl.isEmpty())
-        {
-            list.addAll(nl);
-        }
+        
          
     }
 }
