@@ -388,7 +388,7 @@ public class SVGParser {
 		 return s;
 	}	
 	
-	protected List<String> listObjects(String s) {
+	protected List<String> listObjects(String s, String[] keys) {
 		List<String> list = new ArrayList<String>();
 		String[] S = {s, ""};
 		int index = 0,  strlen = 0, length = S[0].length();	
@@ -773,8 +773,8 @@ public class SVGParser {
         }
        			
 	protected String SVG;	
-	protected String[] keys = {"svg", "g", "clipPath", "polygon", "polyline", "rect", "line", "ellipse", "circle", "path", "text", "defs", "linearGradient", "radialGradient"}; //
-        private String[] aKeys = {"defs", "linearGradient", "radialGradient"};
+	protected String[] keys = {"path",  "g", "svg",  "text", "clipPath", "polygon", "polyline", "rect", "line", "ellipse", "circle", "defs" }; //
+        private String[] aKeys = {"defs", "stop", "linearGradient", "radialGradient"};
 }
 
 class StyleBuilder implements Runnable {

@@ -71,7 +71,7 @@ public class SVGLoader extends SVGParser {
 	public List<Node> createSVG(String xml, String cas) {        
 		String key = findKey(xml, 0, keys); 
                 List<Node> nList = new ArrayList<Node>();
-                Shape shape = null;
+
 		if(key.equals("svg")) {
 			 
 			 String cont = getContent(xml);
@@ -92,7 +92,7 @@ public class SVGLoader extends SVGParser {
                                  attr = removeSVGAttributes(attr) + cas;
 //				 attr = attr.replaceAll("(x=\"[0-9\\.]*\")|(y=\"[0-9\\.]*\")|(width=\"[^\"]*\")|(height=\"[^\"]*\")", "")+" "+cas;
             
-				 List<String> list = listObjects(cont);                                
+				 List<String> list = listObjects(cont, keys);                                
                                  g.getChildren().addAll(buildObjectList(list, attr));                                 
                                  nList.add(g);
                                  return nList;
@@ -109,7 +109,7 @@ public class SVGLoader extends SVGParser {
                                     attr = attr + cas;
                                     Group g = new Group();                                    
  
-                                    List<String>   list = listObjects(cont);
+                                    List<String>   list = listObjects(cont, keys);
 
                                     g.getChildren().addAll( buildObjectList(list, attr));
                                     nList.add(g);  
@@ -121,7 +121,7 @@ public class SVGLoader extends SVGParser {
                                 
                          }
                          else {
-                             List<String>  list = listObjects(cont);
+                             List<String>  list = listObjects(cont, keys);
                              return buildObjectList(list, cas);
                          }
                          	
