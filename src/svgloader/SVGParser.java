@@ -58,14 +58,14 @@ public class SVGParser {
             SVG = SVG
                             .replaceAll("[\\n]+"," ")
 //                            .replaceAll(" {2,}", " ")                                                  
-//                            .replaceAll("\\<\\?metadata.+\\?\\>"," ")
-//                            .replaceAll("<!--[\\s\\S]*?-->", "")//                                                  
+                            .replaceAll("\\<\\?metadata.+\\?\\>"," ")
+                            .replaceAll("<!--[\\s\\S]*?-->", "")                                                  
 //                            .replaceAll("xmlns[^\\s]*\""," ")
                             .trim();
             SVG = removeWerds(SVG);      
             
             long end = System.currentTimeMillis();  
-           
+            System.out.println(SVG);
             System.out.println("Replace time: "+(end-start));
           
 			 			
@@ -441,18 +441,18 @@ public class SVGParser {
             return list;
         }
 	
-	//THIS FUNCTION MAY USE FOR FLAT SVG STRUCTURE
-//	protected List<String> regexListObjects(String s) { // Get tag list (for flat svg structure)
-//            List<String> obList = new ArrayList<String>();
-//            Pattern O_REGEX = Pattern.compile("(<("+gkey+")[^<(/>)>]*(\\(.*\\))*[^<(/>)>]*>[^<(/>)>]*(</\\2>))|(<"+gkey+"[^<>]*(\\(.*\\))*[^<(/>)>]*/>)");
-//            Matcher matcher = O_REGEX.matcher(s);	
-//
-//                while (matcher.find()) {
-//                        obList.add(matcher.group(0));
-//            }	
-//
-//            return obList;
-//	}
+//	THIS FUNCTION MAY USE FOR FLAT SVG STRUCTURE
+	protected List<String> regexListObjects(String s) { // Get tag list (for flat svg structure)
+            List<String> obList = new ArrayList<String>();
+            Pattern O_REGEX = Pattern.compile("(<("+gkey+")[^<(/>)>]*(\\(.*\\))*[^<(/>)>]*>[^<(/>)>]*(</\\2>))|(<"+gkey+"[^<>]*(\\(.*\\))*[^<(/>)>]*/>)");
+            Matcher matcher = O_REGEX.matcher(s);	
+
+                while (matcher.find()) {
+                        obList.add(matcher.group(0));
+            }	
+
+            return obList;
+	}
 	
 
 	protected String findKey(String s, int index) { // Find nearest tag key (combine methods for better speed)		
@@ -795,7 +795,7 @@ public class SVGParser {
        
 			
 	protected String SVG;			
-//	private String gkey = "((svg)|(g)|(clipPath)|(rect)|(circle)|(ellipse)|(line)|(polyline)|(polygon)|(path)|(text)|(defs))";
+	private String gkey = "((svg)|(g)|(clipPath)|(rect)|(circle)|(ellipse)|(line)|(polyline)|(polygon)|(path)|(text)|(defs))";
 	private String[] keys = {"svg", "g", "clipPath", "polygon", "polyline", "rect", "line", "ellipse", "circle", "path", "text", "defs", "linearGradient", "radialGradient"};
 
 }
