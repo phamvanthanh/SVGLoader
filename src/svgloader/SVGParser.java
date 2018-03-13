@@ -54,7 +54,7 @@ public class SVGParser {
 //                                                      .replaceAll(" {2,}", " ")
 //                                                      .replaceAll("\\<\\?xml.+\\?\\>"," ")
 //                                                      .replaceAll("\\<\\?metadata.+\\?\\>"," ")
-//                                                      .replaceAll("<!--[\\s\\S]*?-->", "")
+                                                      .replaceAll("<!--[\\s\\S]*?-->", "")
 //                                                      .replaceAll("<!DOCTYPE[^>]*>", "")
 //                                                      .replaceAll("xmlns[^\\s]*\""," ")
                                                            ;

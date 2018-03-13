@@ -3,10 +3,9 @@ package svgloader;
 import java.util.ArrayList;
 import java.util.List;
 import java.awt.image.BufferedImage;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+
 
 import javafx.scene.Group;
 import javafx.scene.Node;
@@ -71,7 +70,7 @@ public class SVGLoader extends SVGParser {
 	 * XML is the string content of SVG document (see SVGParser Constructor)    
 	 * idx is the current index (before submerging into next recursive level)    
 	 * */    
-        private ExecutorService executor = Executors.newCachedThreadPool();
+        private ExecutorService executor = Executors.newFixedThreadPool(6);
 	public List<Node> createSVG(String xml, String cas) {        
 		String key = findKey(xml, 0, keys); 
                 List<Node> nList = new ArrayList<Node>();
