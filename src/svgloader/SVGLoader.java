@@ -126,14 +126,19 @@ public class SVGLoader extends SVGParser {
                          }
                          	
 		 }
+                 else if(key.equals("defs")){
+                     return nList;
+                 }
 		 else if(!key.equals("svg") && !key.equals("g") && !key.isEmpty()) {                       
-                 
-                     Shape sh =  shape(xml, cas);                 
-                     if(sh != null)
-                         nList.add(sh);
+          
+                         Shape sh =  shape(xml, cas);                 
+                        if(sh != null)
+                            nList.add(sh);
+                     
+                     
                      return nList;
 		 }
-		 return null;
+		 return nList;
 	}
         
     

@@ -45,7 +45,7 @@ public class JavaFxTest extends Application {
 			long start = System.currentTimeMillis();
                         pane.getChildren().addAll(loader.loadSVG());
 			long end = System.currentTimeMillis();
-			System.out.println("Total time: "+(end-start) + " milisecs");
+			System.out.println("Total time: "+(end-start)+ " mili secs");
                   			
 		} catch(Exception e) {		
 		}

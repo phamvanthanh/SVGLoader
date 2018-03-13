@@ -397,7 +397,7 @@ public class SVGParser {
 		while(index < length)
 		{
 			key = findKey(s, index, keys);
-			
+
 			if(!key.isEmpty())			
 			{
 				strlen = svgObject(S, key, index);			
@@ -432,6 +432,7 @@ public class SVGParser {
 	protected String findKey(String s, int index, String[] keys) { // Find nearest tag key (combine methods for better speed)		
 		
 		int start = s.indexOf('<', index);
+                String key;
 		if(start > -1 && start < s.length()-9) {
                         if(s.indexOf("</", index) == start){
                             return loopFindKey(s, index, keys);
@@ -459,6 +460,7 @@ public class SVGParser {
 				key = keys[i];
 			}
 		}
+                
                 return key;
         }
         	
