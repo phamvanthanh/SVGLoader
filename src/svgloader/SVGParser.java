@@ -6,6 +6,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 import javafx.scene.paint.RadialGradient;
 import javafx.scene.paint.LinearGradient;
@@ -31,7 +33,8 @@ public class SVGParser {
 	@exception Java generic Exception if suffix is neither .svg, nor .svgz or the content does
 	not contain any block starting with <svg and ending with </svg>
 	*/
-
+        long time = 0;
+        long count = 0;
 	public SVGParser(String svgName) throws Exception {
 		
                 byte[] buf = null;
@@ -41,6 +44,7 @@ public class SVGParser {
 			FileInputStream inFile = new FileInputStream(svgName);
 			buf = new byte[inFile.available()];
 			length = inFile.read(buf);
+                        inFile.close();
 			
 		}
 		else if(svgName.endsWith(".svgz")){
@@ -60,6 +64,7 @@ public class SVGParser {
                                                            ;
                                                      
             SVG = removeWerds(SVG);
+            
             long end = System.currentTimeMillis();
             System.out.println("Replace time: "+ (end-start));
 //            System.out.println(SVG);
@@ -85,9 +90,6 @@ public class SVGParser {
                     
                     attr = getAttributeString(s, "rect")+cas;
                     rectStyle(sh, attr);
-
-                    
-                    
 		}
                 else if(s.indexOf("<circle") > -1) {
                     attr = getAttributeString(s, "circle")+cas;
@@ -117,9 +119,6 @@ public class SVGParser {
                                      
 		}
 		
-  
-              
-				
 	}
         public void text(Text text, String s, String cas) { 
                 String attr = getAttributeString(s, "text")+cas;
@@ -222,7 +221,7 @@ public class SVGParser {
 		}
 		else if(s.indexOf("<"+key+" ") > -1) {
 			index += s.indexOf("<"+key)+1;
-			return s.substring(index, s.indexOf("/>", index));
+			return s.substring(index, s.indexOf('/', index));
 		}
 		
 		return "";	
@@ -241,7 +240,7 @@ public class SVGParser {
 		if (!color.isEmpty()) {
                      
                         if(color.indexOf("url") > -1){                            
-                            String fId = color.substring(color.indexOf("#")+1, color.indexOf(")"));
+                            String fId = color.substring(color.indexOf('#')+1, color.indexOf(')'));
                             String defs = chaseOut(SVG, fId, aKeys);                           
                             if(defs.contains("<linearGradient"))
                                 return getLinearGradient(defs);
@@ -349,10 +348,10 @@ public class SVGParser {
 	
 	
 	private int isSelfClose(String s, int index) {
-		int close = s.indexOf(">", index);		
+		int close = s.indexOf('>', index);		
 		
 		if(close > 0) {
-			if(s.indexOf("/>", index) == (close -1)) {				
+			if(s.lastIndexOf('/', close) == (close -1)) {				
 				return close+1;
 			}
 		}			
@@ -362,8 +361,8 @@ public class SVGParser {
 	
 	protected String getContent(String s) { //Get content of a balanced tag
 
-		 int start = s.indexOf(">");
-		 int end = s.lastIndexOf("<");
+		 int start = s.indexOf('>');
+		 int end = s.lastIndexOf('<');
 		 if(start > -1 && end > start) {
                         
 			 return s.substring(start+1, end);			 
@@ -376,14 +375,18 @@ public class SVGParser {
 		String[] S = {s, ""};
 		int index = 0,  strlen = 0, length = S[0].length();	
 		String key;
-		
+	
 		while(index < length)
 		{
-			key = findKey(s, index, keys);
-
+			long start = System.nanoTime();
+                        key = findKey(s, index, keys);
+                        long end = System.nanoTime();
+                        time +=(end-start);
+                       
 			if(!key.isEmpty())			
 			{
-				strlen = svgObject(S, key, index);			
+				
+                                strlen = svgObject(S, key, index);                                
 				index += strlen;
 				list.add(S[1]);
 			}
@@ -411,14 +414,29 @@ public class SVGParser {
 
             return list;
         }
+        
+        	//THIS FUNCTION MAY USE FOR FLAT SVG STRUCTURE
+	protected List<String> regexListObjects(String s) { // Get tag list (for flat svg structure)
+            List<String> obList = new ArrayList<String>();
+            Pattern O_REGEX = Pattern.compile("(<("+gkey+")[^<(/>)>]*(\\(.*\\))*[^<(/>)>]*>[^<(/>)>]*(</\\2>))|(<"+gkey+"[^<>]*(\\(.*\\))*[^<(/>)>]*/>)");
+            Matcher matcher = O_REGEX.matcher(s);	
+
+                while (matcher.find()) {
+                        obList.add(matcher.group(0));
+            }	
+
+            return obList;
+	}
+	
 
 	protected String findKey(String s, int index, String[] keys) { // Find nearest tag key (combine methods for better speed)		
 		
 		int start = s.indexOf('<', index);
-                String key;
-		if(start > -1 && start < s.length()-9) {
-                        if(s.indexOf("</", index) == start){
-                            return loopFindKey(s, index, keys);
+             
+		if(start > -1) {
+                     
+                        if(s.indexOf('/', start) == start+1){
+                           return loopFindKey(s, index, keys);
                         }
                         else {
                             int end1 = s.indexOf(' ', start+1);
@@ -436,6 +454,7 @@ public class SVGParser {
         private String loopFindKey(String s, int index, String[] keys){
             	int ind = s.length(); int curInd = -1; String key = ""; 
 		int length = keys.length;
+//                count++;                
 		for(int i =0; i< length; i++) {
 			curInd = s.indexOf("<"+keys[i],index);
 			if(curInd > -1 && curInd < ind) {
@@ -508,7 +527,7 @@ public class SVGParser {
 		String trans = getString(s, "transform");
 		if(!trans.isEmpty()) {
 			
-			String arrStr =  trans.substring(trans.indexOf("(")+1, trans.indexOf(")"));
+			String arrStr =  trans.substring(trans.indexOf('(')+1, trans.indexOf(')'));
 			double [] arr =  Arrays.stream(arrStr.split("[\\s,]"))
 					 .mapToDouble(Double::parseDouble)
 					 .toArray();
@@ -770,39 +789,40 @@ public class SVGParser {
                 
             index = s.indexOf("<!DOCTYPE");            
             if(index > -1)
-                s = s.replace(s.substring(index, s.indexOf(">", index)+1), " ");
+                s = s.replace(s.substring(index, s.indexOf('>', index)+1), " ");
             
             index = s.indexOf("xmlns:dc=\"");
             if(index > -1)
-                s= s.replace(s.substring(index, s.indexOf("\"", index+11)), " ");
+                s= s.replace(s.substring(index, s.indexOf('"', index+11)), " ");
             
             index = s.indexOf("xmlns=\"");
             if(index > -1)
-                s= s.replace(s.substring(index, s.indexOf("\"", index+8)), " ");
+                s= s.replace(s.substring(index, s.indexOf('"', index+8)), " ");
             
             index = s.indexOf("xmlns:dc=\"");
             if(index > -1)
-                s= s.replace(s.substring(index, s.indexOf("\"", index+11)), " ");
+                s= s.replace(s.substring(index, s.indexOf('"', index+11)), " ");
             
             index = s.indexOf("xmlns:rdf=\"");
             if(index > -1)
-                s= s.replace(s.substring(index, s.indexOf("\"", index+13)), " ");
+                s= s.replace(s.substring(index, s.indexOf('"', index+13)), " ");
             
               index = s.indexOf("xmlns:svg=\"");
             if(index > -1)
-                s= s.replace(s.substring(index, s.indexOf("\"", index+13)), " ");
+                s= s.replace(s.substring(index, s.indexOf('"', index+13)), " ");
             
               index = s.indexOf("xmlns:xlink=\"");
             if(index > -1)
-                s= s.replace(s.substring(index, s.indexOf("\"", index+16)), " ");
+                s= s.replace(s.substring(index, s.indexOf('"', index+16)), " ");
             
            return s;
                     
         }
-       			
+        	
 	protected String SVG;	
 	protected String[] keys = {"path",  "g", "svg",  "text", "clipPath", "polygon", "polyline", "rect", "line", "ellipse", "circle", "defs" }; //
         private String[] aKeys = {"defs", "stop", "linearGradient", "radialGradient"};
+        protected String gkey = "((svg)|(g)|(clipPath)|(rect)|(circle)|(ellipse)|(line)|(polyline)|(polygon)|(path)|(text)|(defs))";
 }
 
 class StyleBuilder implements Runnable {

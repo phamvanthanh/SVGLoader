@@ -20,7 +20,7 @@ public class SVGLoader extends SVGParser {
 	 * @param svgName  String, svg document Name    
 	 * */   
         
-       
+        long listime = 0;
 	public SVGLoader(String svgName) throws Exception {        
 		super(svgName);
 		              	
@@ -39,7 +39,7 @@ public class SVGLoader extends SVGParser {
 	 * @return String the SVG title    
 	 * */    
 	public String svgTitle(){
-            String[] S = {SVG, ""};
+            String[] S = {SVG.toString(), ""};
             svgObject(S, "titile", 0);
             return S[1];
 	}
@@ -48,7 +48,8 @@ public class SVGLoader extends SVGParser {
 	 * @return Pane JavaFX Pane with SVG image    
 	 * */    
 	public Pane loadSVG(){              
-            pane.getChildren().addAll(createSVG(SVG, "")); 
+            pane.getChildren().addAll(createSVG(SVG.toString(), "")); 
+            executor.shutdown();
             return pane;
 	}
 	
@@ -70,7 +71,7 @@ public class SVGLoader extends SVGParser {
 	 * XML is the string content of SVG document (see SVGParser Constructor)    
 	 * idx is the current index (before submerging into next recursive level)    
 	 * */    
-        private ExecutorService executor = Executors.newFixedThreadPool(6);
+        private ExecutorService executor = Executors.newFixedThreadPool(8);
 	public List<Node> createSVG(String xml, String cas) {        
 		String key = findKey(xml, 0, keys); 
                 List<Node> nList = new ArrayList<Node>();
@@ -93,9 +94,15 @@ public class SVGLoader extends SVGParser {
                                  g.setLayoutX(x);
 				 g.setLayoutY(y);  
                                  attr = removeSVGAttributes(attr) + cas;
-//				 attr = attr.replaceAll("(x=\"[0-9\\.]*\")|(y=\"[0-9\\.]*\")|(width=\"[^\"]*\")|(height=\"[^\"]*\")", "")+" "+cas;
-            
-				 List<String> list = listObjects(cont, keys);                                
+                                 
+                                 List<String> list;
+                                 if(cont.indexOf('g') < 0 && cont.indexOf("svg") < 0 && cont.length() > 5000000){
+                                     list = regexListObjects(cont);
+                                     System.out.println("Call me in svg");
+                                 }
+                                 else
+                                    list = listObjects(cont, keys);
+
                                  g.getChildren().addAll(buildObjectList(list, attr));                                 
                                  nList.add(g);
                                  return nList;
@@ -110,10 +117,14 @@ public class SVGLoader extends SVGParser {
                             if(!cont.isEmpty()) {
                                 
                                     attr = attr + cas;
-                                    Group g = new Group();                                    
- 
-                                    List<String>   list = listObjects(cont, keys);
-
+                                    Group g = new Group(); 
+                                    List<String> list;
+                                    if(cont.indexOf('g') < 0 && cont.indexOf("svg") < 0 && cont.length() > 5000000){
+                                        list = regexListObjects(cont);
+                                        System.out.println("Call me g");
+                                    }
+                                    else
+                                       list = listObjects(cont, keys);
                                     g.getChildren().addAll( buildObjectList(list, attr));
                                     nList.add(g);  
                                    
@@ -124,7 +135,15 @@ public class SVGLoader extends SVGParser {
                                 
                          }
                          else {
-                             List<String>  list = listObjects(cont, keys);
+                                    List<String>  list;
+                                    if(cont.indexOf('g') < 0 && cont.indexOf("svg") < 0 && cont.length() > 5000000){
+                                        list = regexListObjects(cont);
+                                         System.out.println("Call me g1");
+                                    }
+                                    else  
+                                        list = listObjects(cont, keys);
+//                             long end = System.currentTimeMillis();
+//                              System.out.println("In g: "+(end-start));
                              return buildObjectList(list, cas);
                          }
                          	
