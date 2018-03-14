@@ -95,13 +95,7 @@ public class SVGLoader extends SVGParser {
 				 g.setLayoutY(y);  
                                  attr = removeSVGAttributes(attr) + cas;
                                  
-                                 List<String> list;
-                                 if(cont.indexOf('g') < 0 && cont.indexOf("svg") < 0 && cont.length() > 5000000){
-                                     list = regexListObjects(cont);
-                                     System.out.println("Call me in svg");
-                                 }
-                                 else
-                                    list = listObjects(cont, keys);
+                                 List<String>  list = listObjects(cont, keys);       
 
                                  g.getChildren().addAll(buildObjectList(list, attr));                                 
                                  nList.add(g);
@@ -117,14 +111,8 @@ public class SVGLoader extends SVGParser {
                             if(!cont.isEmpty()) {
                                 
                                     attr = attr + cas;
-                                    Group g = new Group(); 
-                                    List<String> list;
-                                    if(cont.indexOf('g') < 0 && cont.indexOf("svg") < 0 && cont.length() > 5000000){
-                                        list = regexListObjects(cont);
-                                        System.out.println("Call me g");
-                                    }
-                                    else
-                                       list = listObjects(cont, keys);
+                                    Group g = new Group();                             
+                                    List<String>  list = listObjects(cont, keys);
                                     g.getChildren().addAll( buildObjectList(list, attr));
                                     nList.add(g);  
                                    
@@ -135,13 +123,8 @@ public class SVGLoader extends SVGParser {
                                 
                          }
                          else {
-                                    List<String>  list;
-                                    if(cont.indexOf('g') < 0 && cont.indexOf("svg") < 0 && cont.length() > 5000000){
-                                        list = regexListObjects(cont);
-                                         System.out.println("Call me g1");
-                                    }
-                                    else  
-                                        list = listObjects(cont, keys);
+                                   
+                                List<String> list = listObjects(cont, keys);
 
                              return buildObjectList(list, cas);
                          }

@@ -415,20 +415,6 @@ public class SVGParser {
             return list;
         }
         
-        	//THIS FUNCTION MAY USE FOR FLAT SVG STRUCTURE
-	protected List<String> regexListObjects(String s) { // Get tag list (for flat svg structure)
-            List<String> obList = new ArrayList<String>();
-            Pattern O_REGEX = Pattern.compile("(<("+gkey+")[^<(/>)>]*(\\(.*\\))*[^<(/>)>]*>[^<(/>)>]*(</\\2>))|(<"+gkey+"[^<>]*(\\(.*\\))*[^<(/>)>]*/>)");
-            Matcher matcher = O_REGEX.matcher(s);	
-
-                while (matcher.find()) {
-                        obList.add(matcher.group(0));
-            }	
-
-            return obList;
-	}
-	
-
 	protected String findKey(String s, int index, String[] keys) { // Find nearest tag key (combine methods for better speed)		
 		
 		int start = s.indexOf('<', index);
@@ -822,7 +808,7 @@ public class SVGParser {
 	protected String SVG;	
 	protected String[] keys = {"path",  "g", "svg",  "text", "clipPath", "polygon", "polyline", "rect", "line", "ellipse", "circle", "defs" }; //
         private String[] aKeys = {"defs", "stop", "linearGradient", "radialGradient"};
-        protected String gkey = "((svg)|(g)|(clipPath)|(rect)|(circle)|(ellipse)|(line)|(polyline)|(polygon)|(path)|(text)|(defs))";
+       
 }
 
 class StyleBuilder implements Runnable {
