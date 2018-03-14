@@ -142,8 +142,7 @@ public class SVGLoader extends SVGParser {
                                     }
                                     else  
                                         list = listObjects(cont, keys);
-//                             long end = System.currentTimeMillis();
-//                              System.out.println("In g: "+(end-start));
+
                              return buildObjectList(list, cas);
                          }
                          	
