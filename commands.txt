@@ -1,5 +1,5 @@
-javac -d target -sourcepath  src src/svgloader/SVGLoader.java
+javac -d target -sourcepath  src src/svgloader/JavaFxTest.java
 
 cd target
 
-java svgloader.SVGLoader
+java svgloader.JavaFxTest 

@@ -1,14 +1,18 @@
 package svgloader;
 
+import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
+import javafx.scene.Group;
+import javafx.scene.Node;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.paint.RadialGradient;
 import javafx.scene.paint.LinearGradient;
 import javafx.scene.paint.Stop;
@@ -25,8 +29,9 @@ import javafx.scene.text.Text;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Transform;
 
+
 //
-public class SVGParser {
+public abstract class SVGParser {
 	/**
 	Constructor
 	@param svgName String
@@ -35,6 +40,7 @@ public class SVGParser {
 	*/
         long time = 0;
         long count = 0;
+        protected ExecutorService executor = Executors.newFixedThreadPool(8);
 	public SVGParser(String svgName) throws Exception {
 		
                 byte[] buf = null;
@@ -54,8 +60,9 @@ public class SVGParser {
 		}
 		
             long start = System.currentTimeMillis();
-            SVG = (new String(buf, 0, length)).replaceAll("[\\t\\n\\r]+"," ")
-//                                                      .replaceAll(" {2,}", " ")
+            SVG = (new String(buf, 0, length))          
+                                                      .replaceAll("[\\t\\n\\r]+"," ")
+                                                      .replaceAll(" {2,}", " ")
 //                                                      .replaceAll("\\<\\?xml.+\\?\\>"," ")
 //                                                      .replaceAll("\\<\\?metadata.+\\?\\>"," ")
                                                       .replaceAll("<!--[\\s\\S]*?-->", "")
@@ -77,19 +84,21 @@ public class SVGParser {
 	@param s String, the parsing string (e.g. <circle .. style="...."/>)
 	*/
 //        private ExecutorService executor = Executors.newCachedThreadPool();
+        public abstract List<Node> createSVG(String xml, String cas);
+        public abstract List<Node> buildObjectList(List<String> list, String cas);
 	public void shape(SVGPath sh, String s, String cas) { 
 		String attr = "";             
                 if(s.indexOf("<path") > -1 ) {                 
                    
                     attr = getAttributeString(s, "path")+cas;//                  
-                    pathStyle(sh, attr);                   
-                   
+                    pathStyle(sh, attr);    
                    
 		}
                 else if(s.indexOf("<rect") > -1) {
-                    
-                    attr = getAttributeString(s, "rect")+cas;
+                  
+                    attr = getAttributeString(s, "rect")+cas;                    
                     rectStyle(sh, attr);
+               
 		}
                 else if(s.indexOf("<circle") > -1) {
                     attr = getAttributeString(s, "circle")+cas;
@@ -122,8 +131,9 @@ public class SVGParser {
 	}
         public void text(Text text, String s, String cas) { 
                 String attr = getAttributeString(s, "text")+cas;
-                   
-                text.setText(getString(s, "text"));
+                
+                text.setText(getContent(s));
+
                 text.setX(getValue(attr, "x"));
                 text.setY(getValue(attr, "y"));
                 double fs = getValue(attr, "font-size");
@@ -133,6 +143,32 @@ public class SVGParser {
                 text.setFont(Font.font(getString(attr, "font-family"), fs));
                 setStyle(text, attr);              
                  
+        }
+        
+        public void group(Group group, String s, String cas){
+          
+            String attr = getAttributeString(s, "g");
+            groupStyle(group, attr);
+            
+        }
+        
+        public void image(ImageView img, String s, String cas) {
+            String attr = "";
+            
+            if(s.indexOf("<image") > -1)
+                attr = getAttributeString(s, "image");
+            else
+                attr = getAttributeString(s, "img");          
+            
+            int start = attr.indexOf(";base64,")+8;
+            String data = attr.substring(start, attr.indexOf('"', start));            
+//     
+            data = data.replaceAll(" ", "");
+            byte[] dc = Base64.getDecoder().decode(data);               
+            img.setImage(new Image(new ByteArrayInputStream(dc)));        
+            attr += cas;
+            imageStyle(img, attr);
+            
         }
 	/**
 	search and parse double array for Polyline and Polygon
@@ -197,7 +233,7 @@ public class SVGParser {
 			index += s.indexOf(" "+key+"=\"")+3;
 			return s.substring(index, s.indexOf("\"", index));
 		}
-		
+             
 		else if(s.indexOf(key+":") > -1) { //CASE OF CSS FORMAT
 			
 			if(s.indexOf("style")>-1)
@@ -329,8 +365,6 @@ public class SVGParser {
 		return rst.length();
 	}
 
-	
-	
 	/**
 	search, parse and load the content of a path from the given string
 	@param s String, the parsing string
@@ -344,8 +378,6 @@ public class SVGParser {
 	 * Return Group contains all SVG object
 	 */
 		   
-	
-	
 	
 	private int isSelfClose(String s, int index) {
 		int close = s.indexOf('>', index);		
@@ -371,18 +403,18 @@ public class SVGParser {
 	}	
 	
 	protected List<String> listObjects(String s, String[] keys) {
-		List<String> list = new ArrayList<String>();
+		long start = System.nanoTime();
+                        
+                List<String> list = new ArrayList<String>();
 		String[] S = {s, ""};
 		int index = 0,  strlen = 0, length = S[0].length();	
 		String key;
-	
+                
 		while(index < length)
 		{
-			long start = System.nanoTime();
-                        key = findKey(s, index, keys);
-                        long end = System.nanoTime();
-                        time +=(end-start);
-                       
+			
+                       key = findKey(s, index, keys);
+                                            
 			if(!key.isEmpty())			
 			{
 				
@@ -394,6 +426,9 @@ public class SVGParser {
 				return list;
 			}			
 		}
+                
+                    long end = System.nanoTime();
+                        time += (end-start);
 
 		return list;
 	}
@@ -441,7 +476,7 @@ public class SVGParser {
             	int ind = s.length(); int curInd = -1; String key = ""; 
 		int length = keys.length;
 //                count++;                
-		for(int i =0; i< length; i++) {
+		for(int i =0; i < length; i++) {
 			curInd = s.indexOf("<"+keys[i],index);
 			if(curInd > -1 && curInd < ind) {
 				ind = curInd;
@@ -457,12 +492,17 @@ public class SVGParser {
 	}	
 	public FillRule getFillRule(String s) { // Get fill rule attribute
 		
-		String valString = getString(s, "fill-rule");
+		String valString = "";
+                valString = getString(s, "fill-rule");
+                if(valString.isEmpty())
+                    valString = getString(s, "clip-rule");
 		if(valString.equals("evenodd"))
 			return FillRule.EVEN_ODD;
 		
 		return FillRule.NON_ZERO;
 	}
+        
+       
 	/**
 	* Search and parse stroke line cap
 	* @param s String parsing string	
@@ -526,15 +566,80 @@ public class SVGParser {
 				else if(len == 4)
 					return new Rotate(arr[0], arr[1], arr[2], arr[3]);				
 			}
-			else if(trans.indexOf("matrix")>-1) {                                         
+			else if(trans.indexOf("matrix") > -1) {                                         
 				if(len==6)
 					return Transform.affine(arr[0], arr[1], arr[2], arr[3], arr[4], arr[5]);
 			}
+                        else if(trans.indexOf("translate") > -1){
+                               if(len == 2) 
+                                    return Transform.translate(arr[0], arr[1]);
+                             
+                        }
 			return null;
 		}
 		return null;
 	
 	}
+        protected Node getClip(String s ) {
+         
+            String clipId = getString(s, "clip-path");
+
+            if(!clipId.isEmpty()) {
+                clipId =  clipId.substring(clipId.indexOf('(')+2, clipId.indexOf(')'));
+                
+                String clipPath = chaseOut(SVG, clipId, keys);
+                
+                String key = findKey(clipPath, 0, keys);
+                if(key.equals("clipPath")){
+                    clipPath = getContent(clipPath);  
+
+                    List<String> strList = listObjects(clipPath, keys);
+                    if(strList.size() == 1){
+                        return createSVG(strList.get(0),"").get(0);
+                    }
+                        
+                    else {
+                        Group g = new Group(buildObjectList(strList, ""));
+                        return g;
+                    }      
+                                      
+                }
+                else
+                    return createSVG(clipPath,"").get(0);
+   
+            }
+            return null;
+            
+        }
+        protected Node getMask(String s){
+            String maskId = getString(s, "mask");
+
+            if(!maskId.isEmpty()) {
+                maskId =  maskId.substring(maskId.indexOf('(')+2, maskId.indexOf(')'));
+               
+                String mask = chaseOut(SVG, maskId, keys);
+                
+                String key = findKey(mask, 0, keys);
+                if(key.equals("mask")){
+                    mask = getContent(mask);  
+
+                    List<String> strList = listObjects(mask, keys);
+                    if(strList.size() == 1){
+                        return createSVG(strList.get(0),"").get(0);
+                    }
+                        
+                    else {
+                        Group g = new Group(buildObjectList(strList, ""));
+                        return g;
+                    }      
+                                      
+                }
+                else
+                    return createSVG(mask,"").get(0);
+   
+            }
+            return null;
+        } 
         protected String chaseOut(String s, String key, String[] keys){
             int pos = s.indexOf(key);
             
@@ -561,8 +666,7 @@ public class SVGParser {
             if(!cyS.isEmpty())
                 cy = Tool.toDouble(cyS.replace("%", ""))/100;
             if(!rS.isEmpty())
-                r = Tool.toDouble(rS.replace("%", ""))/100;
-            
+                r = Tool.toDouble(rS.replace("%", ""))/100;            
                 
             if(!fyS.isEmpty()){
                 fy = Tool.toDouble(fyS.replace("%", ""))/100;                
@@ -624,13 +728,28 @@ public class SVGParser {
             return sList;
         }
         
+        public void groupStyle(Group group, String attr){
+            Transform trans = getTransform(attr); 
+            
+            if(trans != null){
+                group.getTransforms().add(trans);
+                
+            }
+            Node clip = getClip(attr);           
+               if(clip != null)
+                   group.setClip(clip); 
+            Node mask = getMask(attr);
+               if(mask != null)
+                   group.setClip(mask);
+        }
+        
         public void pathStyle(SVGPath sh, String attr){          
            
             sh.setContent(svgPathContent(attr));		
             sh.setFillRule(getFillRule(attr));
             sh.setStrokeLineCap(getStrokeLineCap(attr));
             sh.setStrokeLineJoin(getStrokeLineJoin(attr));
-            sh.setStrokeMiterLimit(getStrokeMiterLimit(attr));            
+            sh.setStrokeMiterLimit(getStrokeMiterLimit(attr));             
             setStyle(sh, attr);
         }
         
@@ -717,6 +836,25 @@ public class SVGParser {
             setStyle(shape, attr);
              
         }
+        
+        private void imageStyle(ImageView img, String s){
+            double x = getValue(s, "x");
+            double y = getValue(s, "y");
+            img.setLayoutX(x);
+            img.setLayoutY(y);
+            Transform trans = getTransform(s);
+		if(trans != null)
+			img.getTransforms().add(trans);	
+            Node clip = getClip(s);
+            if(clip != null)
+                 img.setClip(clip);
+
+            Node mask = getMask(s);
+            if(mask != null)
+                img.setClip(mask);
+
+        }
+        
         private void setStyle(Shape sh, String s){
                
                 if(getColor(s, "stroke") == null)
@@ -741,11 +879,20 @@ public class SVGParser {
                 
 		Transform trans = getTransform(s);
 		if(trans != null)
-			sh.getTransforms().add(trans);	
+			sh.getTransforms().add(trans);
+                Node clip = getClip(s);
+                if(clip != null)
+                    sh.setClip(clip);  
+                    
+                Node mask = getMask(s);
+                if(mask != null)
+                    sh.setClip(mask);
                
         }
         
-         protected boolean validateAttr(String attr){
+       
+      
+        protected boolean validateAttr(String attr){
             if(attr.isEmpty())
                 return false;
             else if(attr.indexOf("x=")>-1)
@@ -761,6 +908,8 @@ public class SVGParser {
             else if(attr.indexOf("font-family")>-1)
                 return true;
             else if(attr.indexOf("font-size")>-1)
+                return true;
+            else if(attr.indexOf("clip-path")>-1)
                 return true;
             else
                 return false;
@@ -806,7 +955,7 @@ public class SVGParser {
         }
         	
 	protected String SVG;	
-	protected String[] keys = {"path",  "g", "svg",  "text", "clipPath", "polygon", "polyline", "rect", "line", "ellipse", "circle", "defs" }; //
+	protected String[] keys = {"path",  "g", "svg",  "text", "clipPath", "image", "polygon", "polyline", "rect", "line", "ellipse", "circle", "defs" }; //
         private String[] aKeys = {"defs", "stop", "linearGradient", "radialGradient"};
        
 }
