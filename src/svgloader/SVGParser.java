@@ -840,8 +840,14 @@ public abstract class SVGParser {
         private void imageStyle(ImageView img, String s){
             double x = getValue(s, "x");
             double y = getValue(s, "y");
+            double height = getValue(s, "height");
+            double width = getValue(s, "width");
+            
             img.setLayoutX(x);
             img.setLayoutY(y);
+            img.setFitHeight(height);
+            img.setFitWidth(width);
+            
             Transform trans = getTransform(s);
 		if(trans != null)
 			img.getTransforms().add(trans);	
