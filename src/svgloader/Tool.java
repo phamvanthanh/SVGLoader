@@ -4,10 +4,7 @@
  * and open the template in the editor.
  */
 package svgloader;
-/**
- *
- * @author Thanh
- */
+
 import java.util.*;
 // Joe Nartca (C)
 public class Tool {
@@ -55,7 +52,7 @@ public class Tool {
     public static double toDouble(String D) {
         boolean neg;
         double d = 0;
-        int li, i = 0;
+        int li;
         if (D.charAt(0) == '-'){
             neg = true;
             li = 1;
@@ -86,5 +83,22 @@ public class Tool {
             }
         }
         return (neg? -d:d);
+    }
+    public int fuzzIndexOf(String s, String search, int index){
+        int l = search.length()-1;
+        char[] arr = search.toCharArray();
+        if(l == 1)
+            if(s.charAt(index) == arr[0])
+                return index;
+            else 
+                return -1;
+        else {
+            if(s.charAt(index+l) == arr[l] && s.charAt(index+1) == arr[1] )
+                return index;
+            else
+                return -1;
+        }
+            
+      
     }
 }

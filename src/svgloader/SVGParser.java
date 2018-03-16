@@ -403,7 +403,8 @@ public abstract class SVGParser {
 	}	
 	
 	protected List<String> listObjects(String s, String[] keys) {
-		long start = System.nanoTime();
+		
+                long start = System.nanoTime();
                         
                 List<String> list = new ArrayList<String>();
 		String[] S = {s, ""};
@@ -418,9 +419,9 @@ public abstract class SVGParser {
 			if(!key.isEmpty())			
 			{
 				
-                                strlen = svgObject(S, key, index);                                
-				index += strlen;
-				list.add(S[1]);
+                            strlen = svgObject(S, key, index);                                
+                            index += strlen;
+                            list.add(S[1]);
 			}
 			else {
 				return list;
@@ -428,7 +429,7 @@ public abstract class SVGParser {
 		}
                 
                     long end = System.nanoTime();
-                        time += (end-start);
+                    time += (end-start);
 
 		return list;
 	}
@@ -496,9 +497,9 @@ public abstract class SVGParser {
                 valString = getString(s, "fill-rule");
                 if(valString.isEmpty())
                     valString = getString(s, "clip-rule");
-		if(valString.equals("evenodd"))
-			return FillRule.EVEN_ODD;
-		
+		if(valString.indexOf('e') == 0){                   
+                    return FillRule.EVEN_ODD;
+                }	
 		return FillRule.NON_ZERO;
 	}
         
@@ -511,9 +512,9 @@ public abstract class SVGParser {
 	public StrokeLineCap getStrokeLineCap(String s) { //
 		
 		s = getString(s, "stroke-linecap");
-		if(s.equals("round"))
+		if(s.indexOf('r') == 0)
 			return StrokeLineCap.ROUND;
-		else if(s.equals("square"))
+		else if(s.indexOf('s') == 0)
 			return StrokeLineCap.SQUARE;
 	
 		return StrokeLineCap.BUTT;
@@ -527,9 +528,9 @@ public abstract class SVGParser {
 	
 		s = getString(s, "stroke-linejoin");
 		
-		if(s.equals("miter"))
+		if(s.indexOf('m') == 0)
 			return StrokeLineJoin.MITER;
-		else if(s.equals("bevel"))
+		else if(s.indexOf('b') == 0)
 			return StrokeLineJoin.BEVEL;
 		
 		return StrokeLineJoin.ROUND;
@@ -558,7 +559,7 @@ public abstract class SVGParser {
 					 .mapToDouble(Double::parseDouble)
 					 .toArray();
 			int len = arr.length;
-			if(trans.indexOf("rotate") > -1) {
+			if(trans.indexOf('r') == 0) {
 				if(len == 1)
 					return new Rotate(arr[0]);
 				else if(len == 3)
@@ -566,11 +567,11 @@ public abstract class SVGParser {
 				else if(len == 4)
 					return new Rotate(arr[0], arr[1], arr[2], arr[3]);				
 			}
-			else if(trans.indexOf("matrix") > -1) {                                         
+			else if(trans.indexOf('m')== 0) {                                         
 				if(len==6)
 					return Transform.affine(arr[0], arr[1], arr[2], arr[3], arr[4], arr[5]);
 			}
-                        else if(trans.indexOf("translate") > -1){
+                        else if(trans.indexOf('t') == 0){
                                if(len == 2) 
                                     return Transform.translate(arr[0], arr[1]);
                              
@@ -590,7 +591,7 @@ public abstract class SVGParser {
                 String clipPath = chaseOut(SVG, clipId, keys);
                 
                 String key = findKey(clipPath, 0, keys);
-                if(key.equals("clipPath")){
+                if(key.indexOf('c') == 0){
                     clipPath = getContent(clipPath);  
 
                     List<String> strList = listObjects(clipPath, keys);
@@ -620,7 +621,7 @@ public abstract class SVGParser {
                 String mask = chaseOut(SVG, maskId, keys);
                 
                 String key = findKey(mask, 0, keys);
-                if(key.equals("mask")){
+                if(key.indexOf('m')==0){
                     mask = getContent(mask);  
 
                     List<String> strList = listObjects(mask, keys);
