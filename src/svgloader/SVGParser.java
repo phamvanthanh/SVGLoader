@@ -40,7 +40,7 @@ public abstract class SVGParser {
 	*/
         long time = 0;
         long count = 0;
-        protected ExecutorService executor = Executors.newFixedThreadPool(8);
+        protected ExecutorService executor = Executors.newCachedThreadPool();
 	public SVGParser(String svgName) throws Exception {
 		
                 byte[] buf = null;
