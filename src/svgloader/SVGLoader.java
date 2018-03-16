@@ -46,7 +46,7 @@ public class SVGLoader extends SVGParser {
 	 * */    
 	public String svgTitle(){
             String[] S = {SVG.toString(), ""};
-            svgObject(S, "titile", 0);
+            svgObject(S, "title", 0);
             return S[1];
 	}
 	
@@ -89,7 +89,7 @@ public class SVGLoader extends SVGParser {
 		String key = findKey(xml, 0, keys); 
                 List<Node> nList = new ArrayList<Node>();
         
-		if(key.equals("svg")) {
+		if(key.charAt(0) == 's' && key.charAt(2)== 'g') {
 			 
 			String cont = getContent(xml);
 			if(!cont.isEmpty()) {
@@ -130,7 +130,7 @@ public class SVGLoader extends SVGParser {
                                 return nList;
 			 }			 
 		 }
-		 else if(key.equals("g")) {
+		 else if(key.charAt(0) == 'g') {
 			 
                          String attr = getAttributeString(xml, "g");
                          String cont = getContent(xml);
@@ -177,14 +177,14 @@ public class SVGLoader extends SVGParser {
 //                 else if(key.equals("defs")){
 //                     return nList;
 //                 }
-                 else if(key.equals("text")){
+                 else if(key.charAt(0) == 't' && key.length() == 4){
                      
                     Text text = new Text(); 
                     executor.submit(new TextBuilder(text, xml, cas, this));
                     nList.add(text);
                     return nList;     
                  }
-                 else if(key.equals("image") || key.equals("img")){
+                 else if(key.charAt(0) == 'i'){
                    
                     ImageView img = new ImageView();
                     executor.submit(new ImageBuilder(img, xml, cas, this));
@@ -194,7 +194,7 @@ public class SVGLoader extends SVGParser {
 		 else if(!key.isEmpty()) {
                     
                     SVGPath shape = new SVGPath();
-//                    shape(shape, xml, cas);
+
                     executor.submit(new ShapeBuilder(shape, xml, cas, this));
               
                     nList.add(shape);  

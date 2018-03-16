@@ -86,44 +86,44 @@ public abstract class SVGParser {
 //        private ExecutorService executor = Executors.newCachedThreadPool();
         public abstract List<Node> createSVG(String xml, String cas);
         public abstract List<Node> buildObjectList(List<String> list, String cas);
-	public void shape(SVGPath sh, String s, String cas) { 
+	public void shape(SVGPath sh, String xml, String cas) { 
 		String attr = "";             
-                if(s.indexOf("<path") > -1 ) {                 
+                if(xml.charAt(1) == 'p'  && xml.charAt(2) == 'a') {                 
                    
-                    attr = getAttributeString(s, "path")+cas;//                  
+                    attr = getAttributeString(xml, "path")+cas;//                  
                     pathStyle(sh, attr);    
                    
 		}
-                else if(s.indexOf("<rect") > -1) {
+                else if(xml.charAt(1) == 'r') {
                   
-                    attr = getAttributeString(s, "rect")+cas;                    
+                    attr = getAttributeString(xml, "rect")+cas;                    
                     rectStyle(sh, attr);
                
 		}
-                else if(s.indexOf("<circle") > -1) {
-                    attr = getAttributeString(s, "circle")+cas;
+                else if(xml.charAt(1) == 'c') {
+                    attr = getAttributeString(xml, "circle")+cas;
                     circleStyle(sh, attr);
                                     
 		}
-                else if(s.indexOf("<ellipse") > -1) {
-                    attr = getAttributeString(s, "ellipse")+cas;
+                else if(xml.charAt(1) == 'e') {
+                    attr = getAttributeString(xml, "ellipse")+cas;
                     ellipseStyle(sh, attr);
                                        
                    
 		}
-                else if(s.indexOf("<line") > -1) {
-                    attr = getAttributeString(s, "line")+cas;
+                else if(xml.charAt(1) == 'l' ) {
+                    attr = getAttributeString(xml, "line")+cas;
                     lineStyle(sh, attr);
                                 	
                     
 		}
-                else if(s.indexOf("<polyline") > -1) {
-                    attr = getAttributeString(s, "polyline")+cas;
+                else if(xml.charAt(1) == 'p' && xml.charAt(5) == 'l') {
+                    attr = getAttributeString(xml, "polyline")+cas;
                     polylineStyle(sh, attr);
                                
 		}
-                else if(s.indexOf("<polygon") > -1) {
-                    attr = getAttributeString(s, "polygon")+cas;
+                else if(xml.charAt(1) == 'p' && xml.charAt(5) == 'g') {
+                    attr = getAttributeString(xml, "polygon")+cas;
                     polygonStyle(sh, attr);
                                      
 		}
@@ -152,13 +152,13 @@ public abstract class SVGParser {
             
         }
         
-        public void image(ImageView img, String s, String cas) {
+        public void image(ImageView img, String xml, String cas) {
             String attr = "";
             
-            if(s.indexOf("<image") > -1)
-                attr = getAttributeString(s, "image");
+            if(xml.charAt(3) > 'a')
+                attr = getAttributeString(xml, "image");
             else
-                attr = getAttributeString(s, "img");          
+                attr = getAttributeString(xml, "img");          
             
             int start = attr.indexOf(";base64,")+8;
             String data = attr.substring(start, attr.indexOf('"', start));            
