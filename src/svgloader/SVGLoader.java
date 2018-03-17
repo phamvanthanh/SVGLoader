@@ -16,6 +16,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
 import javafx.scene.shape.SVGPath;
 import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
 
 
 public class SVGLoader extends SVGParser {   
@@ -82,7 +83,8 @@ public class SVGLoader extends SVGParser {
 	 * idx is the current index (before submerging into next recursive level)    
 	 * */    
         private ExecutorService executor = Executors.newFixedThreadPool(2*Runtime.getRuntime().availableProcessors());
-	public List<Node> createSVG(String xml, String cas) {        
+	public List<Node> createSVG(String xml, String cas) { 
+             
 		String key = findKey(xml, 0, keys); 
                 List<Node> nList = new ArrayList<Node>();
                 char fc = key.charAt(0);
@@ -133,20 +135,8 @@ public class SVGLoader extends SVGParser {
                          String cont = getContent(xml);
                          if(validateAttr(attr)){
 
-                            if(!cont.isEmpty()) {      
-                                    //Remove un-cascaded attributes
-//                                    int index = attr.indexOf("transform");                                    
-//                                    if(index > -1)
-//                                         attr = attr.replace(attr.substring(index, attr.indexOf(')', index+12)), " ");
-//                                    index = attr.indexOf("clip-path");
-//                                    
-//                                    if(index > -1)
-//                                        attr = attr.replace(attr.substring(index, attr.indexOf(')', index+12)), " ");
-//                                    
-//                                    index = attr.indexOf("mask");
-//                                    if(index > -1)
-//                                        attr = attr.replace(attr.substring(index, attr.indexOf(')', index+12)), " ");
-                                    
+                            if(!cont.isEmpty()) {   
+
                                     Group group = new Group();
                                     
                                     executor.submit(new GroupBuilder(group, xml, cas, this));
@@ -155,8 +145,7 @@ public class SVGLoader extends SVGParser {
                                     List<String>  list = listObjects(cont, keys);
                                     attr = removeUncascadedttributes(attr) + cas; 
                                     
-                                    group.getChildren().addAll(buildObjectList(list, attr));                     
-                                   
+                                    group.getChildren().addAll(buildObjectList(list, attr));                                  
                                     return nList;
                             }
                             else
@@ -165,8 +154,7 @@ public class SVGLoader extends SVGParser {
                          }
                          else {
 
-                                List<String> list = listObjects(cont, keys);
-                       
+                                List<String> list = listObjects(cont, keys);                       
                                 return buildObjectList(list, cas);
                          }
                          	
@@ -177,21 +165,19 @@ public class SVGLoader extends SVGParser {
                  else if(fc == 't' && key.length() == 4){ //text
                     if(xml.contains("<tspan")){
                         String cont = getContent(xml);
-                        xml = xml.replace("<text", "<g");
-                        xml = xml.replace("text>", ">g");
-                        Group group = new Group(); 
-                        executor.submit(new GroupBuilder(group, xml, cas, this));
-                        nList.add(group);
-                        String attr = getAttributeString(xml, "g");
-                           //Remove un-cascaded attributes
-//                        int index = attr.indexOf("transform");                                    
-//                        if(index > -1)
-//                             attr = attr.replace(attr.substring(index, attr.indexOf(')', index+12)), " ");
-                        attr = removeUncascadedttributes(attr) + cas;
-                        List<String>  list = textSegregate(cont);
-                 
+                        xml = xml.replace("<text", "<textFlow");
+                        xml = xml.replace("/text>", "/textFlow>");
+                        
+                        TextFlow tf = new TextFlow(); 
+                        executor.submit(new TextFlowBuilder(tf, xml, cas, this));
+                        nList.add(tf);
+                        String attr = getAttributeString(xml, "textFlow");
 
-                        group.getChildren().addAll(buildObjectList(list, attr)); 
+                        attr = removeUncascadedttributes(attr) + cas;
+                        List<String>  list = textSegregate(cont);                 
+  
+                        tf.getChildren().addAll(buildObjectList(list, attr)); 
+                        return nList;
                         
                     }
                     else {
@@ -202,18 +188,25 @@ public class SVGLoader extends SVGParser {
                     }
                      
                  }
+                 else if(fc == 't' && key.length() == 5){
+                      
+                        Text text = new Text(); 
+                        executor.submit(new tspanBuilder(text, xml, cas, this));
+                        nList.add(text);
+                        return nList;   
+                 }
                  else if(fc == 'i'){ // image/img
                    
                     ImageView img = new ImageView();
                     executor.submit(new ImageBuilder(img, xml, cas, this));
-                    nList.add(img);
+                    nList.add(img);                    
                     return nList;
                  }              
 		 else if(!key.isEmpty()) {
                     
                     SVGPath shape = new SVGPath();
                     executor.submit(new ShapeBuilder(shape, xml, cas, this));              
-                    nList.add(shape);  
+                    nList.add(shape);            
                     return nList;          
                      
 		 }
@@ -235,8 +228,9 @@ public class SVGLoader extends SVGParser {
                	List<Node> oList = new ArrayList<Node>();              
               
                 int length = list.size();
-		for(int i = 0; i < length; i++) {           
-                    List<Node> nodes = createSVG(list.get(i), cas);                 
+		for(int i = 0; i < length; i++) {  
+                  
+                    List<Node> nodes = createSVG(list.get(i), cas);
                     oList.addAll(nodes); 
 		}
                 return oList;
@@ -301,17 +295,52 @@ class TextBuilder implements Runnable {
     private String xml;
     private String cascade;
     private SVGLoader svgloader;
-    private Text sh;
+    private Text text;
     
-    TextBuilder(Text shape, String s, String cas, SVGLoader loader){
+    TextBuilder(Text tx, String s, String cas, SVGLoader loader){
         xml = s;
         cascade = cas;
         svgloader = loader;
-        sh = shape;
+        text = tx;
     }
     @Override
     public void run() {
-        svgloader.text(sh, xml, cascade);         
+        svgloader.text(text, xml, cascade);         
+    }
+}
+
+class TextFlowBuilder implements Runnable {
+    private String xml;
+    private String cascade;
+    private SVGLoader svgloader;
+    private TextFlow textflow;
+    
+    TextFlowBuilder(TextFlow tf, String s, String cas, SVGLoader loader){
+        xml = s;
+        cascade = cas;
+        svgloader = loader;
+        textflow = tf;
+    }
+    @Override
+    public void run() {
+        svgloader.textFlow(textflow, xml, cascade);         
+    }
+}
+class tspanBuilder implements Runnable {
+    private String xml;
+    private String cascade;
+    private SVGLoader svgloader;
+    private Text text;
+    
+    tspanBuilder(Text tx, String s, String cas, SVGLoader loader){
+        xml = s;
+        cascade = cas;
+        svgloader = loader;
+        text = tx;
+    }
+    @Override
+    public void run() {
+        svgloader.tspan(text, xml, cascade);         
     }
 }
 
