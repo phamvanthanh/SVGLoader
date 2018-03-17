@@ -6,9 +6,6 @@ import java.awt.image.BufferedImage;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.RecursiveTask;
-import java.util.concurrent.TimeUnit;
 
 
 import javafx.scene.Group;
@@ -111,7 +108,7 @@ public class SVGLoader extends SVGParser {
                              
                                 List<String>  list = listObjects(cont, keys);                     
                            
-                                attr = removeSVGAttributes(attr) + cas;
+                                attr = removeUncascadedttributes(attr) + cas;
                                 
                                 int index = attr.indexOf("transform");                                    
                                 if(index > -1)
@@ -138,17 +135,17 @@ public class SVGLoader extends SVGParser {
 
                             if(!cont.isEmpty()) {      
                                     //Remove un-cascaded attributes
-                                    int index = attr.indexOf("transform");                                    
-                                    if(index > -1)
-                                         attr = attr.replace(attr.substring(index, attr.indexOf(')', index+12)), " ");
-                                    index = attr.indexOf("clip-path");
-                                    
-                                    if(index > -1)
-                                        attr = attr.replace(attr.substring(index, attr.indexOf(')', index+12)), " ");
-                                    
-                                    index = attr.indexOf("mask");
-                                    if(index > -1)
-                                        attr = attr.replace(attr.substring(index, attr.indexOf(')', index+12)), " ");
+//                                    int index = attr.indexOf("transform");                                    
+//                                    if(index > -1)
+//                                         attr = attr.replace(attr.substring(index, attr.indexOf(')', index+12)), " ");
+//                                    index = attr.indexOf("clip-path");
+//                                    
+//                                    if(index > -1)
+//                                        attr = attr.replace(attr.substring(index, attr.indexOf(')', index+12)), " ");
+//                                    
+//                                    index = attr.indexOf("mask");
+//                                    if(index > -1)
+//                                        attr = attr.replace(attr.substring(index, attr.indexOf(')', index+12)), " ");
                                     
                                     Group group = new Group();
                                     
@@ -156,7 +153,7 @@ public class SVGLoader extends SVGParser {
                                     nList.add(group);
                                     
                                     List<String>  list = listObjects(cont, keys);
-                                    attr = attr + cas; 
+                                    attr = removeUncascadedttributes(attr) + cas; 
                                     
                                     group.getChildren().addAll(buildObjectList(list, attr));                     
                                    
@@ -178,11 +175,32 @@ public class SVGLoader extends SVGParser {
                      return nList;
                  }
                  else if(fc == 't' && key.length() == 4){ //text
+                    if(xml.contains("<tspan")){
+                        String cont = getContent(xml);
+                        xml = xml.replace("<text", "<g");
+                        xml = xml.replace("text>", ">g");
+                        Group group = new Group(); 
+                        executor.submit(new GroupBuilder(group, xml, cas, this));
+                        nList.add(group);
+                        String attr = getAttributeString(xml, "g");
+                           //Remove un-cascaded attributes
+//                        int index = attr.indexOf("transform");                                    
+//                        if(index > -1)
+//                             attr = attr.replace(attr.substring(index, attr.indexOf(')', index+12)), " ");
+                        attr = removeUncascadedttributes(attr) + cas;
+                        List<String>  list = textSegregate(cont);
+                 
+
+                        group.getChildren().addAll(buildObjectList(list, attr)); 
+                        
+                    }
+                    else {
+                        Text text = new Text(); 
+                        executor.submit(new TextBuilder(text, xml, cas, this));
+                        nList.add(text);
+                        return nList;    
+                    }
                      
-                    Text text = new Text(); 
-                    executor.submit(new TextBuilder(text, xml, cas, this));
-                    nList.add(text);
-                    return nList;     
                  }
                  else if(fc == 'i'){ // image/img
                    
@@ -196,7 +214,6 @@ public class SVGLoader extends SVGParser {
                     SVGPath shape = new SVGPath();
                     executor.submit(new ShapeBuilder(shape, xml, cas, this));              
                     nList.add(shape);  
-
                     return nList;          
                      
 		 }
@@ -215,23 +232,31 @@ public class SVGLoader extends SVGParser {
       
 	public List<Node> buildObjectList(List<String> list, String cas){
                 
-               	List<Node> oList = new ArrayList<Node>();
-              
+               	List<Node> oList = new ArrayList<Node>();              
               
                 int length = list.size();
 		for(int i = 0; i < length; i++) {           
-                      
                     List<Node> nodes = createSVG(list.get(i), cas);                 
                     oList.addAll(nodes); 
-
 		}
                 return oList;
 
 	}
-         private String removeSVGAttributes(String s){
+         private String removeUncascadedttributes(String s){
+             
+            int index = s.indexOf("transform");                                    
+            if(index > -1)
+                 s = s.replace(s.substring(index, s.indexOf(')', index+12)), " ");
+            
+            index = s.indexOf("clip-path");
+            if(index > -1)
+                s = s.replace(s.substring(index, s.indexOf(')', index+12)), " ");
 
-        
-            int index  = s.indexOf("x=");
+            index = s.indexOf("mask");
+            if(index > -1)
+                s = s.replace(s.substring(index, s.indexOf(')', index+12)), " ");
+            
+            index  = s.indexOf("x=");
             if(index > -1)
                 s = s.replace(s.substring(index, s.indexOf('"', index+4)), " ");
            

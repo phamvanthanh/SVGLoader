@@ -6,8 +6,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.zip.GZIPInputStream;
 import javafx.scene.Group;
 import javafx.scene.Node;
@@ -131,9 +129,9 @@ public abstract class SVGParser {
 		
 	}
         public void text(Text text, String s, String cas) { 
-                String attr = getAttributeString(s, "text")+cas;
-                text.setText(getContent(s));
-                textStyle(text, attr);             
+            String attr = getAttributeString(s, "text")+cas;
+            text.setText(getContent(s));
+            textStyle(text, attr);          
                  
         }
         
@@ -349,12 +347,12 @@ public abstract class SVGParser {
 						break;						
 				}				
 			}			
-			rst = S[0].substring(start, close);				
+			rst = S[0].substring(start, close);
+                        S[1]= rst;
+                        return start + rst.length();
 		}
-				
-		S[1]= rst;	
-               
-		return rst.length();
+		               
+		return index;
 	}
 
 	/**
@@ -393,7 +391,7 @@ public abstract class SVGParser {
 		 return s;
 	}	
 	
-	protected List<String> listObjects(String s, String[] keys) {
+	protected List<String> listObjects(String s, String[] keys) { // List with a list of keys
 		
                 long start = System.nanoTime();
                         
@@ -410,8 +408,8 @@ public abstract class SVGParser {
 			if(!key.isEmpty())			
 			{
 				
-                            strlen = svgObject(S, key, index);                                
-                            index += strlen;
+                            index = svgObject(S, key, index);                                
+//                            index += strlen;
                             list.add(S[1]);
 			}
 			else {
@@ -425,18 +423,45 @@ public abstract class SVGParser {
 		return list;
 	}
         
-        protected List<String> listObjects(String s, String key){
+        protected List<String> listObjects(String s, String key){ // List with a specific key
             List<String> list = new ArrayList<String>();
             String[] S = {s, ""};
             int index = 0,  strlen = 0, length = S[0].length();	
             
             while(index < length)
             {                
-                strlen = svgObject(S, key, index);
+                index = svgObject(S, key, index);
                 if(strlen == 0)
                     return list;
-                index += strlen;
                 list.add(S[1]);                               
+            }
+
+            return list;
+        }
+        
+        protected List<String> textSegregate(String s){
+            List<String> list = new ArrayList<String>();
+            String[] S = {s, ""};
+            int index = 0, last = 0, length = S[0].length();	
+            
+            while(index < length)
+            {                
+                index = svgObject(S, "tspan", index);
+                if(S[1].length() == 0){
+                    String t = S[0].substring(last);
+                    list.add(t);
+                    return list;
+                }
+                else {
+                   String t = S[0].substring(last, index - S[1].length());
+                   last = index;
+                   if(!t.isEmpty()){
+                        t = "<text>"+t+"</text>";
+                        list.add(t);
+                   } 
+                   list.add(S[1]);   
+                } 
+                                                   
             }
 
             return list;
@@ -506,8 +531,7 @@ public abstract class SVGParser {
 		if(s.indexOf('r') == 0)
 			return StrokeLineCap.ROUND;
 		else if(s.indexOf('s') == 0)
-			return StrokeLineCap.SQUARE;
-	
+			return StrokeLineCap.SQUARE;	
 		return StrokeLineCap.BUTT;
 	}
 	/**
