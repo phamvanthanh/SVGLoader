@@ -550,7 +550,8 @@ public abstract class SVGParser {
 					 .mapToDouble(Double::parseDouble)
 					 .toArray();
 			int len = arr.length;
-			if(trans.indexOf('r') == 0) {
+                        char fc = trans.charAt(0);
+			if(fc == 'r') { //rotate
 				if(len == 1)
 					return new Rotate(arr[0]);
 				else if(len == 3)
@@ -558,11 +559,11 @@ public abstract class SVGParser {
 				else if(len == 4)
 					return new Rotate(arr[0], arr[1], arr[2], arr[3]);				
 			}
-			else if(trans.indexOf('m')== 0) {                                         
+			else if(fc == 'm') {                                         
 				if(len==6)
 					return Transform.affine(arr[0], arr[1], arr[2], arr[3], arr[4], arr[5]);
 			}
-                        else if(trans.indexOf('t') == 0){
+                        else if(fc == 't'){
                                if(len == 2) 
                                     return Transform.translate(arr[0], arr[1]);
                              
@@ -582,7 +583,7 @@ public abstract class SVGParser {
                 String clipPath = chaseOut(SVG, clipId, keys);
                 
                 String key = findKey(clipPath, 0, keys);
-                if(key.indexOf('c') == 0){
+                if(key.charAt(0) == 'c'){ //clipPath
                     clipPath = getContent(clipPath);  
 
                     List<String> strList = listObjects(clipPath, keys);
@@ -612,7 +613,7 @@ public abstract class SVGParser {
                 String mask = chaseOut(SVG, maskId, keys);
                 
                 String key = findKey(mask, 0, keys);
-                if(key.indexOf('m')==0){
+                if(key.charAt(0) == 'm'){
                     mask = getContent(mask);  
 
                     List<String> strList = listObjects(mask, keys);
