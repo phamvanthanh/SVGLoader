@@ -25,6 +25,7 @@ import javafx.scene.shape.Shape;
 import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.shape.StrokeLineJoin;
 import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Transform;
@@ -40,7 +41,7 @@ public abstract class SVGParser {
 	*/
         long time = 0;
         long count = 0;
-        protected ExecutorService executor = Executors.newCachedThreadPool();
+        
 	public SVGParser(String svgName) throws Exception {
 		
                 byte[] buf = null;
@@ -87,42 +88,42 @@ public abstract class SVGParser {
         public abstract List<Node> createSVG(String xml, String cas);
         public abstract List<Node> buildObjectList(List<String> list, String cas);
 	public void shape(SVGPath sh, String xml, String cas) { 
-		String attr = "";             
-                if(xml.charAt(1) == 'p'  && xml.charAt(2) == 'a') {                 
-                   
+		String attr = ""; 
+                char sc = xml.charAt(1); 
+                if(sc == 'p'  && xml.charAt(2) == 'a') {                   
                     attr = getAttributeString(xml, "path")+cas;//                  
                     pathStyle(sh, attr);    
                    
 		}
-                else if(xml.charAt(1) == 'r') {
+                else if(sc == 'r') {
                   
                     attr = getAttributeString(xml, "rect")+cas;                    
                     rectStyle(sh, attr);
                
 		}
-                else if(xml.charAt(1) == 'c') {
+                else if(sc == 'c') {
                     attr = getAttributeString(xml, "circle")+cas;
                     circleStyle(sh, attr);
                                     
 		}
-                else if(xml.charAt(1) == 'e') {
+                else if(sc == 'e') {
                     attr = getAttributeString(xml, "ellipse")+cas;
                     ellipseStyle(sh, attr);
                                        
                    
 		}
-                else if(xml.charAt(1) == 'l' ) {
+                else if(sc == 'l' ) {
                     attr = getAttributeString(xml, "line")+cas;
                     lineStyle(sh, attr);
                                 	
                     
 		}
-                else if(xml.charAt(1) == 'p' && xml.charAt(5) == 'l') {
+                else if(sc == 'p' && xml.charAt(5) == 'l') {
                     attr = getAttributeString(xml, "polyline")+cas;
                     polylineStyle(sh, attr);
                                
 		}
-                else if(xml.charAt(1) == 'p' && xml.charAt(5) == 'g') {
+                else if(sc == 'p' && xml.charAt(5) == 'g') {
                     attr = getAttributeString(xml, "polygon")+cas;
                     polygonStyle(sh, attr);
                                      
@@ -131,17 +132,8 @@ public abstract class SVGParser {
 	}
         public void text(Text text, String s, String cas) { 
                 String attr = getAttributeString(s, "text")+cas;
-                
                 text.setText(getContent(s));
-
-                text.setX(getValue(attr, "x"));
-                text.setY(getValue(attr, "y"));
-                double fs = getValue(attr, "font-size");
-                    if(!(fs > 0.0001))
-                            fs = 14; // Default font size
-
-                text.setFont(Font.font(getString(attr, "font-family"), fs));
-                setStyle(text, attr);              
+                textStyle(text, attr);             
                  
         }
         
@@ -155,7 +147,7 @@ public abstract class SVGParser {
         public void image(ImageView img, String xml, String cas) {
             String attr = "";
             
-            if(xml.charAt(3) > 'a')
+            if(xml.charAt(3) == 'a')
                 attr = getAttributeString(xml, "image");
             else
                 attr = getAttributeString(xml, "img");          
@@ -383,11 +375,10 @@ public abstract class SVGParser {
 		int close = s.indexOf('>', index);		
 		
 		if(close > 0) {
-			if(s.lastIndexOf('/', close) == (close -1)) {				
-				return close+1;
-			}
-		}			
-		
+                    if(s.charAt(close-1) == '/') {				
+                        return close+1;
+                    }
+		}	
 		return -1;
 	}
 	
@@ -395,9 +386,9 @@ public abstract class SVGParser {
 
 		 int start = s.indexOf('>');
 		 int end = s.lastIndexOf('<');
-		 if(start > -1 && end > start) {
+		 if( end > start && start > -1) {
                         
-			 return s.substring(start+1, end);			 
+			return s.substring(start+1, end);			 
 		 }			 
 		 return s;
 	}	
@@ -627,8 +618,7 @@ public abstract class SVGParser {
                     List<String> strList = listObjects(mask, keys);
                     if(strList.size() == 1){
                         return createSVG(strList.get(0),"").get(0);
-                    }
-                        
+                    }                        
                     else {
                         Group g = new Group(buildObjectList(strList, ""));
                         return g;
@@ -860,6 +850,49 @@ public abstract class SVGParser {
             if(mask != null)
                 img.setClip(mask);
 
+        }
+        private void textStyle(Text text, String attr){
+            text.setX(getValue(attr, "x"));
+            text.setY(getValue(attr, "y"));
+            double fs = getValue(attr, "font-size");
+                if(!(fs > 0.0001))
+                        fs = 14; // Default font size
+            String fwStr = getString(attr,"font-weight");
+            FontWeight  fw = FontWeight.NORMAL;
+            int len = fwStr.length();
+            if(!fwStr.isEmpty()){
+                char f = fwStr.charAt(0);
+                
+                switch(f){
+                    case 'b':
+                        if(len == 4)
+                            fw = FontWeight.BOLD;
+                        else
+                            fw = FontWeight.BLACK;
+                        break;
+                    case 'e':
+                        if(fwStr.length() == 10)
+                            fw = FontWeight.EXTRA_BOLD;
+                        else
+                            fw = FontWeight.EXTRA_LIGHT;
+                        break;
+                    case 'm':
+                        fw = FontWeight.MEDIUM;
+                    case 'l':
+                        fw = FontWeight.LIGHT;
+                    case 't':
+                        fw = FontWeight.THIN;
+                    case 's':
+                        fw = FontWeight.SEMI_BOLD;
+                    default:
+                        break;
+                        
+                }
+              
+            }
+
+            text.setFont(Font.font(getString(attr, "font-family"), fw, fs));          
+            setStyle(text, attr);    
         }
         
         private void setStyle(Shape sh, String s){

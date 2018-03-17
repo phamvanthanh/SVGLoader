@@ -6,10 +6,8 @@ import java.awt.image.BufferedImage;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 import java.util.concurrent.RecursiveTask;
-
 import java.util.concurrent.TimeUnit;
 
 
@@ -86,12 +84,12 @@ public class SVGLoader extends SVGParser {
 	 * XML is the string content of SVG document (see SVGParser Constructor)    
 	 * idx is the current index (before submerging into next recursive level)    
 	 * */    
-   
+        private ExecutorService executor = Executors.newFixedThreadPool(2*Runtime.getRuntime().availableProcessors());
 	public List<Node> createSVG(String xml, String cas) {        
 		String key = findKey(xml, 0, keys); 
                 List<Node> nList = new ArrayList<Node>();
-        
-		if(key.charAt(0) == 's' && key.charAt(2)== 'g') {
+                char fc = key.charAt(0);
+		if(fc == 's' && key.charAt(2)== 'g') { //svg
 			 
 			String cont = getContent(xml);
 			if(!cont.isEmpty()) {
@@ -108,7 +106,7 @@ public class SVGLoader extends SVGParser {
                                 Group group = new Group();
                                 group.setLayoutX(x);
 				group.setLayoutY(y);
-//                                group(group, xml, cas);
+                                
                                 executor.submit(new GroupBuilder(group, xml, cas, this));
                              
                                 List<String>  list = listObjects(cont, keys);                     
@@ -132,7 +130,7 @@ public class SVGLoader extends SVGParser {
                                 return nList;
 			 }			 
 		 }
-		 else if(key.charAt(0) == 'g') {
+		 else if(fc == 'g') { //g
 			 
                          String attr = getAttributeString(xml, "g");
                          String cont = getContent(xml);
@@ -153,7 +151,7 @@ public class SVGLoader extends SVGParser {
                                         attr = attr.replace(attr.substring(index, attr.indexOf(')', index+12)), " ");
                                     
                                     Group group = new Group();
-//                                    group(group, xml, cas);
+                                    
                                     executor.submit(new GroupBuilder(group, xml, cas, this));
                                     nList.add(group);
                                     
@@ -176,21 +174,19 @@ public class SVGLoader extends SVGParser {
                          }
                          	
 		 }
-//                 else if(key.equals("defs")){
-//                     return nList;
-//                 }
-                 else if(key.charAt(0) == 't' && key.length() == 4){
+                 else if(fc == 'd'){ //defs
+                     return nList;
+                 }
+                 else if(fc == 't' && key.length() == 4){ //text
                      
                     Text text = new Text(); 
-//                    text(text, xml, cas);
                     executor.submit(new TextBuilder(text, xml, cas, this));
                     nList.add(text);
                     return nList;     
                  }
-                 else if(key.charAt(0) == 'i'){
+                 else if(fc == 'i'){ // image/img
                    
                     ImageView img = new ImageView();
-//                    image(img, xml, cas);
                     executor.submit(new ImageBuilder(img, xml, cas, this));
                     nList.add(img);
                     return nList;
@@ -198,9 +194,7 @@ public class SVGLoader extends SVGParser {
 		 else if(!key.isEmpty()) {
                     
                     SVGPath shape = new SVGPath();
-//                    shape(shape, xml, cas);
-                    executor.submit(new ShapeBuilder(shape, xml, cas, this));
-              
+                    executor.submit(new ShapeBuilder(shape, xml, cas, this));              
                     nList.add(shape);  
 
                     return nList;          
@@ -218,48 +212,20 @@ public class SVGLoader extends SVGParser {
 	* @param cas String svg object attribute to cascade style in nested structure
 	* @return Javafx Group group contains all parsed Javafx objects
 	*/
-//        protected ForkJoinPool forkJoinPool = ForkJoinPool.commonPool();
+      
 	public List<Node> buildObjectList(List<String> list, String cas){
+                
+               	List<Node> oList = new ArrayList<Node>();
               
-            List<Node> oList = new ArrayList<Node>();
-            
-//            RSVGTask rsvgtask = new RSVGTask(list, cas, this);
-
-//            oList = forkJoinPool.invoke(rsvgtask);
-             
-           
-            int length = list.size();
-//            if(length < 10000)
-            for(int i = 0; i < length; i++) {           
-                if(length < 5000){
+              
+                int length = list.size();
+		for(int i = 0; i < length; i++) {           
+                      
                     List<Node> nodes = createSVG(list.get(i), cas);                 
                     oList.addAll(nodes); 
-                }
-                   
-            }
-        /* 
-            else{
-                List<SVGTask> threads = new ArrayList<>();
-             
-                for(int i = 0; i < length; i++){             
-                        
-                    threads.add(new SVGTask(list.get(i), cas, this));
-                }
-                try {
-                        //launch the threads
-                        List<Future<List<Node>>> futures = executor.invokeAll(threads);
-                        //read results
-                        for (Future<List<Node>> future_ : futures) {
-                            oList.addAll(future_.get());
-                        }
 
-                    } catch (Exception e) {
-
-                    }                 
-
-            }*/
-           
-            return oList;
+		}
+                return oList;
 
 	}
          private String removeSVGAttributes(String s){
@@ -267,19 +233,19 @@ public class SVGLoader extends SVGParser {
         
             int index  = s.indexOf("x=");
             if(index > -1)
-                s = s.replace(s.substring(index, s.indexOf("\"", index+4)), " ");
+                s = s.replace(s.substring(index, s.indexOf('"', index+4)), " ");
            
             index  = s.indexOf("y=");
             if(index > -1)
-                s = s.replace(s.substring(index, s.indexOf("\"", index+4)), " ");
+                s = s.replace(s.substring(index, s.indexOf('"', index+4)), " ");
             
             index  = s.indexOf("width=");
             if(index > -1)
-                s = s.replace(s.substring(index, s.indexOf("\"", index+8)), " ");
+                s = s.replace(s.substring(index, s.indexOf('"', index+8)), " ");
             
             index  = s.indexOf("height=");
             if(index > -1)
-                s = s.replace(s.substring(index, s.indexOf("\"", index+9)), " ");
+                s = s.replace(s.substring(index, s.indexOf('"', index+9)), " ");
             return s;
                 
         }
@@ -375,53 +341,5 @@ class SVGTask implements Callable<List<Node>>{
        return loader.createSVG(xml, cascade);
     }
    
-    
-}
-
-class RSVGTask extends RecursiveTask<List<Node>> {
-    private List<String> list;
-    private String cascade;
-    private SVGLoader loader;
-    RSVGTask(List<String> lst, String cas, SVGLoader svgloader) {
-        list = lst;
-        cascade = cas;
-        loader = svgloader;
-    }
-    @Override
-    protected List<Node> compute() {
-       if(list.size() < 100)
-           return loader.buildObjectList(list, cascade);
-       else {
-           
-            List<RSVGTask> subtasks =  new ArrayList<RSVGTask>();
-            subtasks.addAll(createSubtasks());
-            for(RSVGTask subtask : subtasks){
-                subtask.fork();
-            }
-            
-            List<Node> result =  new ArrayList<Node>();
-            for(RSVGTask subtask : subtasks) {
-                List<Node> r = subtask.join();
-               
-                result.addAll(r);
-            }
-            return result;
-           
-       }
-       
-    }
-    
-     private List<RSVGTask> createSubtasks() {
-        List<RSVGTask> subtasks =  new ArrayList<RSVGTask>();
-        int pivot = (int)(list.size()/2);
-        RSVGTask subtask1 = new RSVGTask(list.subList(0, pivot), cascade, loader);
-        RSVGTask subtask2 = new RSVGTask(list.subList(pivot+1, list.size()-1), cascade, loader);
-
-        subtasks.add(subtask1);
-        subtasks.add(subtask2);
-//        System.out.println(subtasks);
-
-        return subtasks;
-    }
     
 }
