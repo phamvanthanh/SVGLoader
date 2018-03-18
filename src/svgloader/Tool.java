@@ -51,7 +51,7 @@ public class Tool {
     }
     public static double toDouble(String D) {
         boolean neg;
-        double d = 0;
+        double d = 0.0;
         int li;
         if (D.charAt(0) == '-'){
             neg = true;

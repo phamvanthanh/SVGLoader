@@ -261,7 +261,7 @@ public abstract class SVGParser {
 		else if(s.indexOf(key+":") > -1) { //CASE OF CSS FORMAT
 			String str = "";
 
-			if(s.indexOf(" style") > -1) 
+			if(s.indexOf("style") > -1)
 				str = getString(s, "style")+";";
 
 			int ind = str.indexOf(key+":");
@@ -468,12 +468,12 @@ public abstract class SVGParser {
         protected List<String> listObjects(String s, String key){ // List with a specific key
             List<String> list = new ArrayList<String>();
             String[] S = {s, ""};
-            int index = 0,  strlen = 0, length = S[0].length();	
-            
+            int index = 0,  length = S[0].length();	
+          
             while(index < length)
             {                
                 index = svgObject(S, key, index);
-                if(strlen == 0)
+                if(S[1].isEmpty())
                     return list;
                 list.add(S[1]);                               
             }
@@ -612,19 +612,20 @@ public abstract class SVGParser {
 	public Transform getTransform(String s) {
 
 		String trans = getString(s, "transform");
+            
                 if(trans.isEmpty())
                     return null;
 		else {
-		
+                      
 			String arrStr =  trans.substring(trans.indexOf('(')+1, trans.indexOf(')')).trim();
                         if(arrStr.isEmpty())
                             return null;
                         else {
-//                            double [] arr =  Arrays.stream(arrStr.split("[\\,\\s]"))
-                            double [] arr =  Arrays.stream(arrStr.split(","))
+
+                            double [] arr =  Arrays.stream(arrStr.split("[\\,\\s]"))
 					 .mapToDouble(Tool::toDouble)
 					 .toArray();
-                         
+                            
                             int len = arr.length;
                             char fc = trans.charAt(0);
                             if(fc == 'r') { //rotate
@@ -762,7 +763,7 @@ public abstract class SVGParser {
               
             List<Stop> sList = buildStopList(listObjects(getContent(s), "stop"));
             RadialGradient lg = new RadialGradient(fa, fd, cx, cy, r, true, CycleMethod.NO_CYCLE, sList);
-           
+    
             return lg;
         }
         protected LinearGradient getLinearGradient(String s){
@@ -783,7 +784,9 @@ public abstract class SVGParser {
 //            String spmd = getString(s, "spreadMethod");          
            
             List<Stop> sList = buildStopList(listObjects(getContent(s), "stop"));
+            List<String> stl = listObjects(getContent(s), "stop");
             LinearGradient lg = new LinearGradient(x1, y1, x2, y2, true, CycleMethod.NO_CYCLE, sList);
+
             return lg;
         }
         
@@ -794,7 +797,8 @@ public abstract class SVGParser {
                 sList.add(new Stop(Tool.toDouble(getString(s,"offset").replace("%", ""))/100, 
                                     getColor(s, "stop-color", "stop-opacity")));
                
-            }          
+            }  
+//            System.out.println("StropList: "+sList);
             return sList;
         }
         

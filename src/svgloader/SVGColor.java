@@ -46,7 +46,7 @@ public class SVGColor {
                 
                 if(cs.equals("none"))
                     cs = "transparent";                
-                return Color.web(cs, 1);			
+                return Color.web(cs, value);			
             }
             catch (Exception e){} 
 
