@@ -71,7 +71,7 @@ public abstract class SVGParser {
                                                       .replaceAll("xmlns[^\\s]*\""," ")
                                                            ;
                                                      
-            SVG = removeWerds(SVG);
+//            SVG = removeWerds(SVG);
             
             long end = System.currentTimeMillis();
             System.out.println("Replace time: "+ (end-start));
@@ -218,13 +218,19 @@ public abstract class SVGParser {
 	*/
 	public double getValue(String s, String key) {
 			
-		String vs = getString(s, key);              
-                String ns = vs.split("[a-z]")[0];
-                String u = vs.substring(ns.length());          
+		String vs = getString(s, key); 
+                if(vs.isEmpty())
+                    return 0.0;
+                
+                String ns = (vs.split("[pxcmm\\s]")[0]).trim();
+                       
                 double v = 0.0;
                 if(!ns.isEmpty())
-                    v = Tool.toDouble(ns);
-                
+                    v = Tool.toDouble(ns);  
+                else
+                    return v;
+              
+                String u = vs.substring(ns.length());  
                 if(u.isEmpty())
                     return v;
                 else if(u.charAt(0) == 'p')
@@ -246,35 +252,37 @@ public abstract class SVGParser {
 	public String getString(String s, String key) {
 
 		int index = key.length();
+              
 		if(s.indexOf(" "+key+"=\"") > -1) {
 			index += s.indexOf(" "+key+"=\"")+3;
-			return s.substring(index, s.indexOf("\"", index));
+			return s.substring(index, s.indexOf("\"", index)).trim();
 		}
              
 		else if(s.indexOf(key+":") > -1) { //CASE OF CSS FORMAT
-			
-			if(s.indexOf("style")>-1) 
-				s = getString(s, "style")+";";
-			
-			int ind = s.indexOf(key+":");
+			String str = "";
+
+			if(s.indexOf(" style") > -1) 
+				str = getString(s, "style")+";";
+
+			int ind = str.indexOf(key+":");
 			
 			if(ind > -1) {
-				if(ind > 0 && s.charAt(ind-1) != ';' && s.charAt(ind-1) != ' ')
+				if(ind > 0 && str.charAt(ind-1) != ';' && str.charAt(ind-1) != ' ')
 					return "";
-				
+                                
 				index +=ind + 1;
-				return s.substring(index, s.indexOf(';', index));
+				return str.substring(index, str.indexOf(';', index)).trim();
 			}			
 			return "";
 		}
 		
 		else if(key == "text") {			
 			int tIndex = s.indexOf('>')+1;
-			return s.substring(tIndex, s.indexOf('<', tIndex));
+			return s.substring(tIndex, s.indexOf('<', tIndex)).trim();
 		}
 		else if(s.indexOf("<"+key+" ") > -1) {
 			index += s.indexOf("<"+key)+1;
-			return s.substring(index, s.indexOf('/', index));
+			return s.substring(index, s.indexOf('/', index)).trim();
 		}
 		
 		return "";	
@@ -289,8 +297,9 @@ public abstract class SVGParser {
 	public Paint getColor(String s, String key) {
 		
 		String color = getString(s, key);		
-	
-		if (!color.isEmpty()) {
+                if(color.isEmpty())
+                    return null;
+		else {
                      
                         if(color.indexOf("url") > -1){                            
                             String fId = color.substring(color.indexOf('#')+1, color.indexOf(')'));
@@ -306,9 +315,9 @@ public abstract class SVGParser {
                             double op = opacityValue(s, key+"-opacity");
                             return svgColor.svgColor(color, op); // SVGColor API
                         }
-			
+			return null;
 		}
-		return null;
+		
 			
 	}
         
@@ -331,12 +340,12 @@ public abstract class SVGParser {
 	@return double opacity value of JavaFX color of the given key*/
 	public double opacityValue(String s, String key) {		
 		String valStr = getString(s, key).trim();
-                
-                double op = 1.0;
-		if(!valStr.isEmpty())
-                    op =  Double.parseDouble(valStr);
-//                System.out.println(op);
-                return op;	
+               
+                if(valStr.isEmpty())
+                    return 1.0;
+		else
+                    return  Tool.toDouble(valStr);
+	
 	}
 	
 	/**
@@ -382,12 +391,10 @@ public abstract class SVGParser {
                        
 			rst = S[0].substring(start, close);
                         S[1]= rst;
-//                        System.out.println();
-//                        System.out.println(S[1]);
-                        
+                       
                         return start + rst.length();
 		}
-		 S[1]= rst;              
+		S[1]= rst;              
 		return index;
 	}
 
@@ -420,7 +427,7 @@ public abstract class SVGParser {
 
 		 int start = s.indexOf('>');
 		 int end = s.lastIndexOf('<');
-		 if( end > start && start > -1) {                        
+		 if( end > start && start > -1) {                      
                     return s.substring(start+1, end);			 
 		 }			 
 		 return s;
@@ -605,34 +612,43 @@ public abstract class SVGParser {
 	public Transform getTransform(String s) {
 
 		String trans = getString(s, "transform");
-		if(!trans.isEmpty()) {
-			
-			String arrStr =  trans.substring(trans.indexOf('(')+1, trans.indexOf(')'));
-			double [] arr =  Arrays.stream(arrStr.split("[\\s,]"))
-					 .mapToDouble(Double::parseDouble)
+                if(trans.isEmpty())
+                    return null;
+		else {
+		
+			String arrStr =  trans.substring(trans.indexOf('(')+1, trans.indexOf(')')).trim();
+                        if(arrStr.isEmpty())
+                            return null;
+                        else {
+//                            double [] arr =  Arrays.stream(arrStr.split("[\\,\\s]"))
+                            double [] arr =  Arrays.stream(arrStr.split(","))
+					 .mapToDouble(Tool::toDouble)
 					 .toArray();
-			int len = arr.length;
-                        char fc = trans.charAt(0);
-			if(fc == 'r') { //rotate
-				if(len == 1)
-					return new Rotate(arr[0]);
-				else if(len == 3)
-					return new Rotate(arr[0], arr[1], arr[2]);
-				else if(len == 4)
-					return new Rotate(arr[0], arr[1], arr[2], arr[3]);				
-			}
-			else if(fc == 'm') {                                         
-				if(len==6)
-					return Transform.affine(arr[0], arr[1], arr[2], arr[3], arr[4], arr[5]);
-			}
-                        else if(fc == 't'){
-                               if(len == 2) 
-                                    return Transform.translate(arr[0], arr[1]);
-                             
-                        }
-			return null;
+                         
+                            int len = arr.length;
+                            char fc = trans.charAt(0);
+                            if(fc == 'r') { //rotate
+                                    if(len == 1)
+                                            return new Rotate(arr[0]);
+                                    else if(len == 3)
+                                            return new Rotate(arr[0], arr[1], arr[2]);
+                                    else if(len == 4)
+                                            return new Rotate(arr[0], arr[1], arr[2], arr[3]);				
+                            }
+                            else if(fc == 'm') {                                         
+                                    if(len==6)
+                                            return Transform.affine(arr[0], arr[1], arr[2], arr[3], arr[4], arr[5]);
+                            }
+                            else if(fc == 't'){
+                                   if(len == 2) 
+                                        return Transform.translate(arr[0], arr[1]);
+
+                            }
+                            return null;
+                            }
+			
 		}
-		return null;
+		
 	
 	}
         protected Node getClip(String s ) {
@@ -982,7 +998,10 @@ public abstract class SVGParser {
 //                if(getColor(s, "stroke") == null)
 //                    sh.setStroke(null);    
 //                else
-                sh.setStroke(getColor(s, "stroke"));
+                Paint stk = getColor(s, "stroke");
+                if(stk != null)
+                    sh.setStroke(stk);
+                
                 Paint paint = getColor(s, "fill");
                 if(paint == null)
                      sh.setFill(Color.BLACK);              
