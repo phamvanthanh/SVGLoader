@@ -6,13 +6,9 @@ import java.awt.image.BufferedImage;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.image.ImageView;
-
-
 import javafx.scene.layout.Pane;
 import javafx.scene.shape.SVGPath;
 import javafx.scene.text.Text;
@@ -92,16 +88,10 @@ public class SVGLoader extends SVGParser {
 			 
 			String cont = getContent(xml);
 			if(!cont.isEmpty()) {
-				 String attr = getAttributeString(xml, "svg");
-				 String xstr = (getString(attr, "x").split("[a-z]")[0]);
-                                 double x = 0, y = 0;
-                                 if(!xstr.isEmpty())                                     
-                                     x = Tool.toDouble(xstr);                                                     
-                                 
-				 String ystr = getString(attr, "y").split("[a-z]")[0];
-                                 if(!ystr.isEmpty())
-                                     y = Tool.toDouble(ystr);
-                                 
+				String attr = getAttributeString(xml, "svg");
+
+                                double x = getValue(attr, "x");
+                                double y = getValue(attr, "y");
                                 Group group = new Group();
                                 group.setLayoutX(x);
 				group.setLayoutY(y);

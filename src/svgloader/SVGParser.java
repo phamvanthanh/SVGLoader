@@ -217,11 +217,23 @@ public abstract class SVGParser {
 	*/
 	public double getValue(String s, String key) {
 			
-		String valStr = getString(s, key);	
-		if(!valStr.isEmpty())
-			return Tool.toDouble(valStr);
-		
-		return 0;		
+		String vs = getString(s, key);              
+                String ns = vs.split("[cmmpx]")[0];
+                String u = vs.substring(ns.length());          
+                double v = 0.0;
+                if(!ns.isEmpty())
+                    v = Tool.toDouble(ns);
+                
+                if(u.isEmpty())
+                    return v;
+                else if(u.charAt(0) == 'p')
+                    return v;
+                else if(u.charAt(0) == 'm')
+                    return v*3.779528;
+                else if(u.charAt(0) == 'c')
+                    return v*37.79528;
+                
+		return v;		
 	}
 	
 	/**
@@ -411,7 +423,7 @@ public abstract class SVGParser {
                         
                 List<String> list = new ArrayList<String>();
 		String[] S = {s, ""};
-		int index = 0,  strlen = 0, length = S[0].length();	
+		int index = 0,  length = S[0].length();	
 		String key;
                 
 		while(index < length)
@@ -878,7 +890,7 @@ public abstract class SVGParser {
             double height = getValue(s, "height");
             double width = getValue(s, "width");
             
-            img.setLayoutX(x);
+            img.setLayoutX(x);            
             img.setLayoutY(y);
             img.setFitHeight(height);
             img.setFitWidth(width);
@@ -900,13 +912,11 @@ public abstract class SVGParser {
             double y = getValue(attr, "y");
             text.setX(x);
             text.setY(y);
-
-            String fsS = getString(attr, "font-size").split("[a-z]")[0]; 
                                               
-            double fs = Tool.toDouble(fsS);
-     
-                if(!(fs > 0.0001))
-                        fs = 14; // Default font size
+            double fs = getValue(attr, "font-size");     
+            if(!(fs > 0.0001))
+                    fs = 14; // Default font size
+            
             String fwStr = getString(attr,"font-weight");
             FontWeight  fw = FontWeight.NORMAL;
             int len = fwStr.length();
@@ -946,14 +956,12 @@ public abstract class SVGParser {
         }
         
         private void textFlowStyle(TextFlow tf, String attr){
+            
             double x = getValue(attr, "x");
-//            if(x != 0)
-                tf.setLayoutX(x);
+            tf.setLayoutX(x);
             
             double y = getValue(attr, "y");
-//            if(x != 0)
-                tf.setLayoutY(y + 11);  
-//              System.out.println(y);
+            tf.setLayoutY(y + 11);  
             
             Transform trans = getTransform(attr);
 		if(trans != null)
