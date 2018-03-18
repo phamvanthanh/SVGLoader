@@ -57,17 +57,18 @@ public abstract class SVGParser {
 			GZIPInputStream inFile = new GZIPInputStream( new FileInputStream(svgName));
 			buf = new byte[inFile.available()];
 			length = inFile.read(buf);
+                        inFile.close();
 		}
 		
             long start = System.currentTimeMillis();
             SVG = (new String(buf, 0, length))          
                                                       .replaceAll("[\\t\\n\\r]+"," ")
                                                       .replaceAll(" {2,}", " ")
-//                                                      .replaceAll("\\<\\?xml.+\\?\\>"," ")
-//                                                      .replaceAll("\\<\\?metadata.+\\?\\>"," ")
+                                                      .replaceAll("\\<\\?xml.+\\?\\>"," ")
+                                                      .replaceAll("\\<\\?metadata.+\\?\\>"," ")
                                                       .replaceAll("<!--[\\s\\S]*?-->", "")
-//                                                      .replaceAll("<!DOCTYPE[^>]*>", "")
-//                                                      .replaceAll("xmlns[^\\s]*\""," ")
+                                                      .replaceAll("<!DOCTYPE[^>]*>", "")
+                                                      .replaceAll("xmlns[^\\s]*\""," ")
                                                            ;
                                                      
             SVG = removeWerds(SVG);
@@ -218,7 +219,7 @@ public abstract class SVGParser {
 	public double getValue(String s, String key) {
 			
 		String vs = getString(s, key);              
-                String ns = vs.split("[cmmpx]")[0];
+                String ns = vs.split("[a-z]")[0];
                 String u = vs.substring(ns.length());          
                 double v = 0.0;
                 if(!ns.isEmpty())
@@ -252,7 +253,7 @@ public abstract class SVGParser {
              
 		else if(s.indexOf(key+":") > -1) { //CASE OF CSS FORMAT
 			
-			if(s.indexOf("style")>-1)
+			if(s.indexOf("style")>-1) 
 				s = getString(s, "style")+";";
 			
 			int ind = s.indexOf(key+":");
@@ -300,9 +301,12 @@ public abstract class SVGParser {
                                 return getRadialGradient(defs);
                             }                                
                         }
-			SVGColor svgColor = new SVGColor();
-			double op = opacityValue(s, key+"-opacity");
-			return svgColor.svgColor(color, op); // SVGColor API
+                        else {
+                            SVGColor svgColor = new SVGColor();
+                            double op = opacityValue(s, key+"-opacity");
+                            return svgColor.svgColor(color, op); // SVGColor API
+                        }
+			
 		}
 		return null;
 			
@@ -314,8 +318,7 @@ public abstract class SVGParser {
 		
 		if (c != null) {
 			SVGColor svgColor = new SVGColor();
-			double op = opacityValue(s, opacity);	
-			
+			double op = opacityValue(s, opacity);			
 			return svgColor.svgColor(c, op); // SVGColor API
 		}
 		return null;
@@ -327,10 +330,13 @@ public abstract class SVGParser {
 	@param key String the designated key (e.g. key fill-opacity -> <rect...fill-opacity="0.5".../>)
 	@return double opacity value of JavaFX color of the given key*/
 	public double opacityValue(String s, String key) {		
-		String valStr = getString(s, key);
+		String valStr = getString(s, key).trim();
+                
+                double op = 1.0;
 		if(!valStr.isEmpty())
-			return Tool.toDouble(valStr);
-		return 1;
+                    op =  Double.parseDouble(valStr);
+//                System.out.println(op);
+                return op;	
 	}
 	
 	/**
@@ -346,7 +352,7 @@ public abstract class SVGParser {
 		int length = key.length();
 		String rst = "";
 		if(start > -1) {	
-			int close = isSelfClose(S[0], start);
+			int  close = isSelfClose(S[0], start);
 			if( close < 0) { 	// Not self close tag														
 				close = S[0].indexOf("/"+key+">", start)+ length +2; 	//First close		
 
@@ -372,9 +378,13 @@ public abstract class SVGParser {
 					else
 						break;						
 				}				
-			}			
+			}	
+                       
 			rst = S[0].substring(start, close);
                         S[1]= rst;
+//                        System.out.println();
+//                        System.out.println(S[1]);
+                        
                         return start + rst.length();
 		}
 		 S[1]= rst;              
@@ -410,9 +420,8 @@ public abstract class SVGParser {
 
 		 int start = s.indexOf('>');
 		 int end = s.lastIndexOf('<');
-		 if( end > start && start > -1) {
-                        
-			return s.substring(start+1, end);			 
+		 if( end > start && start > -1) {                        
+                    return s.substring(start+1, end);			 
 		 }			 
 		 return s;
 	}	
@@ -434,15 +443,15 @@ public abstract class SVGParser {
 			if(!key.isEmpty())			
 			{
 				
-                            index = svgObject(S, key, index);                                
-//                            index += strlen;
+                            index = svgObject(S, key, index);       
+
                             list.add(S[1]);
 			}
 			else {
 				return list;
 			}			
 		}
-                
+//                 System.out.printf("Index: %d, Length: %d \n", index, length);
                     long end = System.nanoTime();
                     time += (end-start);
 
@@ -538,12 +547,11 @@ public abstract class SVGParser {
 		return s.substring(s.indexOf('<')+key.length()+1, s.indexOf('>'));
 	}	
 	public FillRule getFillRule(String s) { // Get fill rule attribute
-		
-		String valString = "";
-                valString = getString(s, "fill-rule");
-                if(valString.isEmpty())
-                    valString = getString(s, "clip-rule");
-		if(valString.indexOf('e') == 0){                   
+			
+                String valStr = getString(s, "fill-rule");
+                if(valStr.isEmpty())
+                    valStr = getString(s, "clip-rule");
+		if(valStr.indexOf('e') == 0){                   
                     return FillRule.EVEN_ODD;
                 }	
 		return FillRule.NON_ZERO;
@@ -971,10 +979,10 @@ public abstract class SVGParser {
         
         private void setStyle(Shape sh, String s){
                
-                if(getColor(s, "stroke") == null)
-                    sh.setFill(null);    
-                else
-                     sh.setStroke(getColor(s, "stroke"));
+//                if(getColor(s, "stroke") == null)
+//                    sh.setStroke(null);    
+//                else
+                sh.setStroke(getColor(s, "stroke"));
                 Paint paint = getColor(s, "fill");
                 if(paint == null)
                      sh.setFill(Color.BLACK);              
@@ -1009,9 +1017,9 @@ public abstract class SVGParser {
         protected boolean validateAttr(String attr){
             if(attr.isEmpty())
                 return false;
-            else if(attr.indexOf("x=")>-1)
+            else if(attr.indexOf(" x=")>-1)
                 return true;
-            else if(attr.indexOf("y=")>-1)
+            else if(attr.indexOf(" y=")>-1)
                 return true;
             else if(attr.indexOf("transform") > -1)
                 return true;

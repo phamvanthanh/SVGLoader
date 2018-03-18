@@ -40,17 +40,22 @@ public class SVGColor {
     @return Color or null if string is invalid...
     */
     public Color svgColor(String color, double value) {
-    	
+    	Color c = null; 
     	try {
                 color = color.toLowerCase();
                 color = color.trim();
-                if(color.equals("none"))
-                    color = "transparent";      
-                return Color.web(color, value);			
+                if(color.equals("none"))              
+                    color = "transparent";  
+                
+//              double val = 1.0;
+//               System.out.printf("Color: %s, Value: %f\n", color, value);
+                c = Color.web(color, value);			
             }
-            catch (Exception e){}
+            catch (Exception e){
+                e.printStackTrace();
+            }
             
-    	return null;	
+    	return c;	
 		   	
     }
     private double opacity = 1;
