@@ -78,7 +78,7 @@ public class SVGLoader extends SVGParser {
 	 * XML is the string content of SVG document (see SVGParser Constructor)    
 	 * idx is the current index (before submerging into next recursive level)    
 	 * */    
-//        private ExecutorService executor = Executors.newFixedThreadPool(2*Runtime.getRuntime().availableProcessors());
+        private ExecutorService executor = Executors.newFixedThreadPool(2*Runtime.getRuntime().availableProcessors());
 	public List<Node> createSVG(String xml, String cas) { 
              
 		String key = findKey(xml, 0, keys); 
@@ -97,16 +97,12 @@ public class SVGLoader extends SVGParser {
                                 Group group = new Group();
                                 group.setLayoutX(x);
 				group.setLayoutY(y);
-                                group(group, xml, cas);
-//                                executor.submit(new GroupBuilder(group, xml, cas, this));
-                                
+//                                group(group, xml, cas);
+                                 executor.submit(new GroupBuilder(group, xml, cas, this));
                                 List<String>  list = listObjects(cont, keys);  
-//                                System.out.println(list.size());
-                               
-                                attr = removeUncascadedttributes(attr) + cas;
-//                                 System.out.println(list.get(2).substring(0,1000));
 
-                               
+                                attr = removeUncascadedttributes(attr) + cas;
+
                                 group.getChildren().addAll(buildObjectList(list, attr));                                 
                                 nList.add(group);
                                 return nList;
@@ -122,8 +118,8 @@ public class SVGLoader extends SVGParser {
                             if(!cont.isEmpty()) {   
                                  
                                     Group group = new Group(); 
-                                    group(group, xml, cas);
-//                                    executor.submit(new GroupBuilder(group, xml, cas, this));
+//                                    group(group, xml, cas);
+                                    executor.submit(new GroupBuilder(group, xml, cas, this));
                                     nList.add(group);
                                     
                                     List<String>  list = listObjects(cont, keys);
@@ -153,8 +149,8 @@ public class SVGLoader extends SVGParser {
                         xml = xml.replace("/text>", "/g>");
                         
                         Group group = new Group(); 
-                        group(group, xml, cas);
-                      
+//                        group(group, xml, cas);
+                        executor.submit(new GroupBuilder(group, xml, cas, this));
                         nList.add(group);
                         String attr = getAttributeString(xml, "g");
 
@@ -167,8 +163,8 @@ public class SVGLoader extends SVGParser {
                     }
                     else {
                         Text text = new Text();
-                        text(text, xml, cas);
-//                        executor.submit(new TextBuilder(text, xml, cas, this));
+//                        text(text, xml, cas);
+                        executor.submit(new TextBuilder(text, xml, cas, this));
                         nList.add(text);
                         return nList;    
                     }
@@ -177,24 +173,24 @@ public class SVGLoader extends SVGParser {
                  else if(fc == 't' && key.length() == 5){
                       
                         Text text = new Text(); 
-                        text(text, xml, cas);
-//                        executor.submit(new tspanBuilder(text, xml, cas, this));
+//                        text(text, xml, cas);
+                        executor.submit(new tspanBuilder(text, xml, cas, this));
                         nList.add(text);
                         return nList;   
                  }
                  else if(fc == 'i'){ // image/img
                    
                     ImageView img = new ImageView();
-                    image(img, xml, cas);
-//                    executor.submit(new ImageBuilder(img, xml, cas, this));
+//                    image(img, xml, cas);
+                    executor.submit(new ImageBuilder(img, xml, cas, this));
                     nList.add(img);                    
                     return nList;
                  }              
 		 else if(!key.isEmpty()) {
                     
                     SVGPath shape = new SVGPath();
-                    shape(shape, xml, cas);
-//                    executor.submit(new ShapeBuilder(shape, xml, cas, this));              
+//                    shape(shape, xml, cas);
+                    executor.submit(new ShapeBuilder(shape, xml, cas, this));              
                     nList.add(shape);            
                     return nList;          
                      

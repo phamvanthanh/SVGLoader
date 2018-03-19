@@ -28,11 +28,9 @@ public class JavaFxTest extends Application {
 			Application.Parameters params = getParameters();
                         java.util.List<String> pl = params.getRaw();
                         SVGLoader loader = null;
-	
-			
+				
 			StackPane  pane = new StackPane();
-			
-			
+						
 			Parent root = new Pane(pane);												
 			Scene scene = new Scene(root);			
 			primaryStage.setScene(scene);			
@@ -45,10 +43,9 @@ public class JavaFxTest extends Application {
                             loader = new SVGLoader(pl.get(0));	
                         long start = System.currentTimeMillis();
                         Pane svgPane = loader.loadSVG();
-//                        svgPane.setScaleX(0.5);
-//                        svgPane.setScaleY(0.5);
+
                         pane.getChildren().addAll(svgPane);
-                        svgPane.setCache(true);
+//                        svgPane.setCache(true);
                         long end = System.currentTimeMillis();
                         primaryStage.show();
 			
@@ -56,11 +53,7 @@ public class JavaFxTest extends Application {
 			System.out.println("Total time: "+(end-start)+ " mili secs");
                   	System.out.println("Measure time: "+loader.time/1000000+ " mili secs");	
                         System.out.println("Measure count: "+loader.count+ " times");
-                        Runtime rt = Runtime.getRuntime(); 
-                        long total_mem = rt.totalMemory(); 
-                        long free_mem = rt.freeMemory(); 
-                        long used_mem = total_mem - free_mem; 
-                        System.out.println("Amount of used memory: " + used_mem/1000000); 
+                      
                         
 		} catch(Exception e) {		
 		}
