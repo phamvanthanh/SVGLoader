@@ -17,6 +17,7 @@ import javafx.stage.Stage;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPane;
 
 
 public class JavaFxTest extends Application {
@@ -29,7 +30,7 @@ public class JavaFxTest extends Application {
                         SVGLoader loader = null;
 	
 			
-			Pane  pane = new Pane();
+			StackPane  pane = new StackPane();
 			
 			
 			Parent root = new Pane(pane);												
@@ -39,7 +40,7 @@ public class JavaFxTest extends Application {
 			
                        
                         if(pl.isEmpty())
-                            loader = new SVGLoader("C:/test/STRUCTUAL.svg");
+                            loader = new SVGLoader("C:/test/9.svg");
                         else
                             loader = new SVGLoader(pl.get(0));	
                         long start = System.currentTimeMillis();

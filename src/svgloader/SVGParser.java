@@ -25,12 +25,12 @@ import javafx.scene.shape.StrokeLineJoin;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
+import javafx.scene.text.TextAlignment;
 import javafx.scene.text.TextFlow;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Transform;
 
 
-//
 public abstract class SVGParser {
 	/**
 	Constructor
@@ -62,16 +62,16 @@ public abstract class SVGParser {
 		
             long start = System.currentTimeMillis();
             SVG = (new String(buf, 0, length))          
-                                                      .replaceAll("[\\t\\n\\r]+"," ")
-                                                      .replaceAll(" {2,}", " ")
-                                                      .replaceAll("\\<\\?xml.+\\?\\>"," ")
-                                                      .replaceAll("\\<\\?metadata.+\\?\\>"," ")
-                                                      .replaceAll("<!--[\\s\\S]*?-->", "")
-                                                      .replaceAll("<!DOCTYPE[^>]*>", "")
-                                                      .replaceAll("xmlns[^\\s]*\""," ")
-                                                           ;
+                                .replaceAll("[\\t\\n\\r]+"," ")
+                                .replaceAll(" {2,}", " ")
+                                .replaceAll("\\<\\?xml.+\\?\\>"," ")
+                                .replaceAll("\\<\\?metadata.+\\?\\>"," ")
+                                .replaceAll("<!--[\\s\\S]*?-->", "")
+                                .replaceAll("<!DOCTYPE[^>]*>", "")
+                                .replaceAll("xmlns[^\\s]*\""," ")
+                                ;
                                                      
-//            SVG = removeWerds(SVG);
+//            SVG = removeWeirds(SVG);
             
             long end = System.currentTimeMillis();
             System.out.println("Replace time: "+ (end-start));
@@ -92,40 +92,38 @@ public abstract class SVGParser {
                 char sc = xml.charAt(1); 
                 if(sc == 'p'  && xml.charAt(2) == 'a') {                   
                     attr = getAttributeString(xml, "path")+cas;//                  
-                    pathStyle(sh, attr);    
+                    setPath(sh, attr);    
                    
 		}
                 else if(sc == 'r') {
                   
                     attr = getAttributeString(xml, "rect")+cas;                    
-                    rectStyle(sh, attr);
+                    setRect(sh, attr);
                
 		}
                 else if(sc == 'c') {
                     attr = getAttributeString(xml, "circle")+cas;
-                    circleStyle(sh, attr);
+                    setCircle(sh, attr);
                                     
 		}
                 else if(sc == 'e') {
                     attr = getAttributeString(xml, "ellipse")+cas;
-                    ellipseStyle(sh, attr);
-                                       
-                   
+                    setEllipse(sh, attr);
+                    
 		}
                 else if(sc == 'l' ) {
                     attr = getAttributeString(xml, "line")+cas;
-                    lineStyle(sh, attr);
-                                	
+                    setLine(sh, attr);
                     
 		}
                 else if(sc == 'p' && xml.charAt(5) == 'l') {
                     attr = getAttributeString(xml, "polyline")+cas;
-                    polylineStyle(sh, attr);
+                    setPolyline(sh, attr);
                                
 		}
                 else if(sc == 'p' && xml.charAt(5) == 'g') {
                     attr = getAttributeString(xml, "polygon")+cas;
-                    polygonStyle(sh, attr);
+                    setPolygon(sh, attr);
                                      
 		}
 		
@@ -133,18 +131,18 @@ public abstract class SVGParser {
         public void text(Text text, String s, String cas) { 
             String attr = getAttributeString(s, "text")+cas;
             text.setText(getContent(s));
-            textStyle(text, attr);     
+            setText(text, attr);     
                  
         }
         
         public void tspan(Text text, String s, String cas) { 
             String attr = getAttributeString(s, "tspan")+cas;
             text.setText(getContent(s));
-            textStyle(text, attr);                       
+            setText(text, attr);                       
         }
         public void textFlow(TextFlow tf, String s, String cas){
             String attr = getAttributeString(s, "text")+cas;
-            textFlowStyle(tf, attr);  
+            setTextFlow(tf, attr);  
         }
         
         public void group(Group group, String xml, String cas){
@@ -153,7 +151,7 @@ public abstract class SVGParser {
                 attr = getAttributeString(xml, "g") + attr;
             else 
                 attr = getAttributeString(xml, "svg") + attr;                    
-            groupStyle(group, attr);
+            setGroup(group, attr);
             
         }
         
@@ -172,7 +170,7 @@ public abstract class SVGParser {
             byte[] dc = Base64.getDecoder().decode(data);               
             img.setImage(new Image(new ByteArrayInputStream(dc)));        
             attr += cas;
-            imageStyle(img, attr);
+            setImage(img, attr);
             
         }
 	/**
@@ -201,6 +199,7 @@ public abstract class SVGParser {
 	@return double array with Viewbox 4 elements (x, y, width, height)
 	*/
 	public double[] viewBoxData(String s) {	
+            
 		ArrayList<String> alStr = Tool.split(getString(s, "viewBox"), " ");
                 int sz = alStr.size();
                 double[] dArr = new double[sz];
@@ -296,12 +295,16 @@ public abstract class SVGParser {
 	*/
 	public Paint getColor(String s, String key) {
 		
-		String color = getString(s, key);		
+		String color = getString(s, key);
+               
                 if(color.isEmpty())
                     return null;
 		else {
-                     
-                        if(color.indexOf("url") > -1){                            
+//                         if(color.equals("#1969bc"))
+//                             count++;
+//                         System.out.println(count);
+                        if(color.indexOf("url") > -1){
+                            
                             String fId = color.substring(color.indexOf('#')+1, color.indexOf(')'));
                             String defs = chaseOut(SVG, fId, aKeys);                           
                             if(defs.contains("<linearGradient"))
@@ -430,7 +433,7 @@ public abstract class SVGParser {
 		 if( end > start && start > -1) {                      
                     return s.substring(start+1, end);			 
 		 }			 
-		 return s;
+		 return "";
 	}	
 	
 	protected List<String> listObjects(String s, String[] keys) { // List with a list of keys
@@ -622,9 +625,9 @@ public abstract class SVGParser {
                             return null;
                         else {
 
-                            double [] arr =  Arrays.stream(arrStr.split("[\\,\\s]"))
-					 .mapToDouble(Tool::toDouble)
-					 .toArray();
+                            double [] arr =  Arrays.stream(arrStr.split("[\\s,]")) 
+                                                   .mapToDouble(Tool::toDouble)
+                                                   .toArray();
                             
                             int len = arr.length;
                             char fc = trans.charAt(0);
@@ -712,8 +715,8 @@ public abstract class SVGParser {
             return null;
         } 
         protected String chaseOut(String s, String key, String[] keys){
-            int pos = s.indexOf(key);
-            
+//            int pos = s.indexOf(key);
+            int pos = s.indexOf("id=\""+key);
             if(pos > 0){
                 int begin = s.lastIndexOf('<', pos);
                 String tag = findKey(s, begin, keys);
@@ -802,7 +805,7 @@ public abstract class SVGParser {
             return sList;
         }
         
-        public void groupStyle(Group group, String attr){
+        public void setGroup(Group group, String attr){
             Transform trans = getTransform(attr); 
             
             if(trans != null){
@@ -819,7 +822,7 @@ public abstract class SVGParser {
             group.setLayoutY(getValue(attr, "y"));
         }
         
-        public void pathStyle(SVGPath sh, String attr){          
+        public void setPath(SVGPath sh, String attr){          
            
             sh.setContent(svgPathContent(attr));		
             sh.setFillRule(getFillRule(attr));
@@ -829,7 +832,7 @@ public abstract class SVGParser {
             setStyle(sh, attr);
         }
         
-        protected void rectStyle(SVGPath shape, String attr){
+        protected void setRect(SVGPath shape, String attr){
              double x = getValue(attr, "x"), 
                     y = getValue(attr, "y"), 
                     width = getValue(attr, "width"),
@@ -851,7 +854,8 @@ public abstract class SVGParser {
             setStyle(shape, attr);
       
         }
-        private void polylineStyle(SVGPath shape, String attr){
+        
+        private void setPolyline(SVGPath shape, String attr){
             double[] points = doubleArray(getString(attr, "points"));
             int length = points.length;
             String s = "M"+points[0]+","+points[1];
@@ -861,7 +865,8 @@ public abstract class SVGParser {
             shape.setContent(s);
             setStyle(shape, attr);  
         }
-        private void polygonStyle(SVGPath shape, String attr){
+        
+        private void setPolygon(SVGPath shape, String attr){
           
             double[] points = doubleArray(getString(attr, "points"));		 
             int length = points.length;
@@ -873,7 +878,8 @@ public abstract class SVGParser {
             shape.setContent(s+" z");
             setStyle(shape, attr);   
         }
-        private void lineStyle(SVGPath shape, String attr){
+        
+        private void setLine(SVGPath shape, String attr){
 
             double x1 = getValue(attr, "x1"),
                    y1 = getValue(attr, "y1"),
@@ -884,7 +890,7 @@ public abstract class SVGParser {
             setStyle(shape, attr);
            
         }
-        private void circleStyle(SVGPath shape, String attr){
+        private void setCircle(SVGPath shape, String attr){
      
             double cx = getValue(attr, "cx"),
                    cy = getValue(attr, "cy"),
@@ -896,7 +902,7 @@ public abstract class SVGParser {
             setStyle(shape, attr);
           
         }
-        private void ellipseStyle(SVGPath shape, String attr){
+        private void setEllipse(SVGPath shape, String attr){
            
             double cx = getValue(attr, "cx"),
                    cy = getValue(attr, "cy"),
@@ -912,7 +918,7 @@ public abstract class SVGParser {
              
         }
         
-        private void imageStyle(ImageView img, String s){
+        private void setImage(ImageView img, String s){
             double x = getValue(s, "x");
             double y = getValue(s, "y");
             double height = getValue(s, "height");
@@ -935,11 +941,15 @@ public abstract class SVGParser {
                 img.setClip(mask);
 
         }
-        private void textStyle(Text text, String attr){
+        private void setText(Text text, String attr){
             double x = getValue(attr, "x");
             double y = getValue(attr, "y");
-            text.setX(x);
-            text.setY(y);
+
+           
+            text.setLayoutX(x);
+            text.setLayoutY(y);
+            
+            
                                               
             double fs = getValue(attr, "font-size");     
             if(!(fs > 0.0001))
@@ -983,14 +993,15 @@ public abstract class SVGParser {
             setStyle(text, attr);    
         }
         
-        private void textFlowStyle(TextFlow tf, String attr){
+        private void setTextFlow(TextFlow tf, String attr){
             
             double x = getValue(attr, "x");
             tf.setLayoutX(x);
             
             double y = getValue(attr, "y");
-            tf.setLayoutY(y + 11);  
+            tf.setLayoutY(y + 11); 
             
+           
             Transform trans = getTransform(attr);
 		if(trans != null)
 			tf.getTransforms().add(trans);	
@@ -1003,8 +1014,8 @@ public abstract class SVGParser {
 //                    sh.setStroke(null);    
 //                else
                 Paint stk = getColor(s, "stroke");
-                if(stk != null)
-                    sh.setStroke(stk);
+//                if(stk != null)
+                sh.setStroke(stk);
                 
                 Paint paint = getColor(s, "fill");
                 if(paint == null)
@@ -1040,7 +1051,7 @@ public abstract class SVGParser {
         protected boolean validateAttr(String attr){
             if(attr.isEmpty())
                 return false;
-            else if(attr.indexOf(" x=")>-1)
+            else if(attr.indexOf(" x=")> -1 )
                 return true;
             else if(attr.indexOf(" y=")>-1)
                 return true;
@@ -1060,7 +1071,7 @@ public abstract class SVGParser {
                 return false;
             
         }
-        private String removeWerds(String s){
+        private String removeWeirds(String s){
             
             int index = s.indexOf("<?xml");
             
@@ -1119,7 +1130,7 @@ class StyleBuilder implements Runnable {
 
     @Override
     public void run() {
-        svgparser.pathStyle(shape, cascade);
+        svgparser.setPath(shape, cascade);
     }
    
   

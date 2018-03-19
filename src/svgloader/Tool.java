@@ -84,21 +84,5 @@ public class Tool {
         }
         return (neg? -d:d);
     }
-    public int fuzzIndexOf(String s, String search, int index){
-        int l = search.length()-1;
-        char[] arr = search.toCharArray();
-        if(l == 1)
-            if(s.charAt(index) == arr[0])
-                return index;
-            else 
-                return -1;
-        else {
-            if(s.charAt(index+l) == arr[l] && s.charAt(index+1) == arr[1] )
-                return index;
-            else
-                return -1;
-        }
-            
-      
-    }
+   
 }

@@ -82,6 +82,7 @@ public class SVGLoader extends SVGParser {
 	public List<Node> createSVG(String xml, String cas) { 
              
 		String key = findKey(xml, 0, keys); 
+//                System.out.println(xml.substring(0, 100));
                 List<Node> nList = new ArrayList<Node>();
                 char fc = key.charAt(0);
 		if(fc == 's' && key.charAt(2)== 'g') { //svg
@@ -89,7 +90,8 @@ public class SVGLoader extends SVGParser {
 			String cont = getContent(xml);
 			if(!cont.isEmpty()) {
 				String attr = getAttributeString(xml, "svg");
-
+//                                System.out.println(cont.substring(0, 1000));
+//                                System.out.println(cont.substring(cont.length() - 100));
                                 double x = getValue(attr, "x");
                                 double y = getValue(attr, "y");
                                 Group group = new Group();
@@ -97,22 +99,13 @@ public class SVGLoader extends SVGParser {
 				group.setLayoutY(y);
                                 group(group, xml, cas);
 //                                executor.submit(new GroupBuilder(group, xml, cas, this));
-                             
-                                List<String>  list = listObjects(cont, keys);                     
-                           
-                                attr = removeUncascadedttributes(attr) + cas;
                                 
-                                int index = attr.indexOf("transform");                                    
-                                if(index > -1)
-                                     attr = attr.replace(attr.substring(index, attr.indexOf(')', index+12)), " ");
-                                index = attr.indexOf("clip-path");
+                                List<String>  list = listObjects(cont, keys);  
+//                                System.out.println(list.size());
+                               
+                                attr = removeUncascadedttributes(attr) + cas;
+//                                 System.out.println(list.get(2).substring(0,1000));
 
-                                if(index > -1)
-                                    attr = attr.replace(attr.substring(index, attr.indexOf(')', index+12)), " ");
-
-                                index = attr.indexOf("mask");
-                                if(index > -1)
-                                    attr = attr.replace(attr.substring(index, attr.indexOf(')', index+12)), " ");
                                
                                 group.getChildren().addAll(buildObjectList(list, attr));                                 
                                 nList.add(group);
@@ -123,10 +116,11 @@ public class SVGLoader extends SVGParser {
 			 
                          String attr = getAttributeString(xml, "g");
                          String cont = getContent(xml);
+//                         System.out.println(cont);
                          if(validateAttr(attr)){
-
+//                            System.out.println(attr);
                             if(!cont.isEmpty()) {   
-
+                                 
                                     Group group = new Group(); 
                                     group(group, xml, cas);
 //                                    executor.submit(new GroupBuilder(group, xml, cas, this));
@@ -155,19 +149,19 @@ public class SVGLoader extends SVGParser {
                  else if(fc == 't' && key.length() == 4){ //text
                     if(xml.contains("<tspan")){
                         String cont = getContent(xml);
-                        xml = xml.replace("<text", "<textFlow");
-                        xml = xml.replace("/text>", "/textFlow>");
+                        xml = xml.replace("<text", "<g");
+                        xml = xml.replace("/text>", "/g>");
                         
-                        TextFlow tf = new TextFlow(); 
-                        textFlow(tf, xml, cas);
-//                        executor.submit(new TextFlowBuilder(tf, xml, cas, this));
-                        nList.add(tf);
-                        String attr = getAttributeString(xml, "textFlow");
+                        Group group = new Group(); 
+                        group(group, xml, cas);
+                      
+                        nList.add(group);
+                        String attr = getAttributeString(xml, "g");
 
                         attr = removeUncascadedttributes(attr) + cas;
                         List<String>  list = textSegregate(cont);                 
   
-                        tf.getChildren().addAll(buildObjectList(list, attr)); 
+                        group.getChildren().addAll(buildObjectList(list, attr)); 
                         return nList;
                         
                     }
@@ -231,7 +225,7 @@ public class SVGLoader extends SVGParser {
                 return oList;
 
 	}
-         private String removeUncascadedttributes(String s){
+        private String removeUncascadedttributes(String s){
              
             int index = s.indexOf("transform");                                    
             if(index > -1)

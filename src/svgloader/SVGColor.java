@@ -45,7 +45,8 @@ public class SVGColor {
                 String cs = color.toLowerCase().trim();
                 
                 if(cs.equals("none"))
-                    cs = "transparent";                
+                    cs = "transparent";  
+//                System.out.printf("Color: %s, Op: %f\n", cs, value);
                 return Color.web(cs, value);			
             }
             catch (Exception e){} 
