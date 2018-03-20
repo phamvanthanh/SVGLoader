@@ -21,13 +21,13 @@ import javafx.scene.layout.StackPane;
 
 
 public class JavaFxTest extends Application {
-	
+	SVGLoader loader = null;
 	public void start(Stage primaryStage) {
 		try {
 			
 			Application.Parameters params = getParameters();
                         java.util.List<String> pl = params.getRaw();
-                        SVGLoader loader = null;
+                        
 				
 			StackPane  pane = new StackPane();
 						
@@ -39,7 +39,7 @@ public class JavaFxTest extends Application {
 			
                        
                         if(pl.isEmpty())
-                            loader = new SVGLoader("C:/test/0132740648_9.svg");
+                            loader = new SVGLoader("C:/test/0132740648_1.svg");
                         else
                             loader = new SVGLoader(pl.get(0));	
                         long start = System.currentTimeMillis();
@@ -62,6 +62,9 @@ public class JavaFxTest extends Application {
 		}
 		
 	}
+        public void stop() {
+            loader.shutdown();  // shutdown the pool
+        }
 	public static void main(String[] args) {
 		
 		launch(args);

@@ -234,7 +234,7 @@ public class SVGLoader extends SVGParser {
 
 	}
         
-        public void close(){
+        public void shutdown(){
          
           executor.shutdown(); 
       	}

@@ -85,66 +85,66 @@ public abstract class SVGParser {
 		String attr = ""; 
                 char sc = xml.charAt(1); 
                 if(sc == 'p'  && xml.charAt(2) == 'a') {                   
-                    attr = getAttributeString(xml, "path").replaceAll("\\t", " ")+cas;//                  
+                    attr = getAttributeString(xml, "path") + cas;//                  
                     setPath(sh, attr);    
                    
 		}
                 else if(sc == 'r') {
                   
-                    attr = getAttributeString(xml, "rect").replaceAll("\\t", " ")+cas;                    
+                    attr = getAttributeString(xml, "rect") + cas;                    
                     setRect(sh, attr);
                
 		}
                 else if(sc == 'c') {
-                    attr = getAttributeString(xml, "circle").replaceAll("\\t", " ")+cas;
+                    attr = getAttributeString(xml, "circle") + cas;
                     setCircle(sh, attr);
                                     
 		}
                 else if(sc == 'e') {
-                    attr = getAttributeString(xml, "ellipse").replaceAll("\\t", " ")+cas;
+                    attr = getAttributeString(xml, "ellipse") + cas;
                     setEllipse(sh, attr);
                     
 		}
                 else if(sc == 'l' ) {
-                    attr = getAttributeString(xml, "line").replaceAll("\\t", " ")+cas;
+                    attr = getAttributeString(xml, "line") + cas;
                     setLine(sh, attr);
                     
 		}
                 else if(sc == 'p' && xml.charAt(5) == 'l') {
-                    attr = getAttributeString(xml, "polyline").replaceAll("\\t", " ")+cas;
+                    attr = getAttributeString(xml, "polyline") + cas;
                     setPolyline(sh, attr);
                                
 		}
                 else if(sc == 'p' && xml.charAt(5) == 'g') {
-                    attr = getAttributeString(xml, "polygon").replaceAll("\\t", " ")+cas;
+                    attr = getAttributeString(xml, "polygon") + cas;
                     setPolygon(sh, attr);
                                      
 		}
 		
 	}
         public void text(Text text, String s, String cas) { 
-            String attr = getAttributeString(s, "text").replaceAll("\\t", " ")+cas;
+            String attr = getAttributeString(s, "text") + cas;
             text.setText(getContent(s));
             setText(text, attr);     
                  
         }
         
         public void tspan(Text text, String s, String cas) { 
-            String attr = getAttributeString(s, "tspan").replaceAll("\\t", " ")+cas;
+            String attr = getAttributeString(s, "tspan") + cas;
             text.setText(getContent(s));
             setText(text, attr);                       
         }
         public void textFlow(TextFlow tf, String s, String cas){
-            String attr = getAttributeString(s, "text").replaceAll("\\t", " ")+cas;
+            String attr = getAttributeString(s, "text") + cas;
             setTextFlow(tf, attr);  
         }
         
         public void group(Group group, String xml, String cas){
             String attr = "";
             if(xml.charAt(1) == 'g')
-                attr = getAttributeString(xml, "g").replaceAll("\\t", " ") + cas;
+                attr = getAttributeString(xml, "g") + cas;
             else 
-                attr = getAttributeString(xml, "svg").replaceAll("\\t", " ") + cas;                    
+                attr = getAttributeString(xml, "svg") + cas;                    
             setGroup(group, attr);
             
         }
@@ -153,11 +153,11 @@ public abstract class SVGParser {
             String attr = "";
            
             if(xml.charAt(3) == 'a')
-                attr = getAttributeString(xml, "image").replaceAll("\\t", " ");
+                attr = getAttributeString(xml, "image");
             else
-                attr = getAttributeString(xml, "img").replaceAll("\\t", " ");          
+                attr = getAttributeString(xml, "img");          
             
-            int start = attr.indexOf(";base64,")+8;
+            int start = attr.indexOf(";base64,") + 8;
             String data = attr.substring(start, attr.indexOf('"', start));            
    
             data = data.replaceAll(" ", "");
@@ -251,29 +251,31 @@ public abstract class SVGParser {
 	*/
 	public String getString(String s, String key) {
                     
-		int index = key.length();
-    
-		if(s.indexOf(" "+key+"=\"") > -1) {
-                    index += s.indexOf(" "+key+"=\"")+3;
+		  int length = key.length();
+                int index = s.indexOf(" "+key+"=\"");
+		if( index > -1) {
+                    index = index + 3 + length;
                     return s.substring(index, s.indexOf("\"", index)).trim();
+              
 		}
                              
-		else if(s.indexOf(key+":") > -1) { //CASE OF CSS FORMAT
-			String str = "";
-//                        
-			if(s.indexOf("style") > -1)
-                            str = getString(s, "style")+";";
+		else if( s.indexOf(key+":") > -1) { //CASE OF CSS FORMAT
+               
+			index = s.indexOf(key+":");		
+                        if(index > 0 && s.charAt(index-1) != ';' && s.charAt(index-1) != ' ' && s.charAt(index-1) != '"')
+                            return "";
+
+                        index =index + 1 +length;
+                        int c1 = s.indexOf(';', index);
+                        int c2 = s.indexOf('"', index);
                         
-			int ind = str.indexOf(key+":");
+                        if((c1 > -1 && c1 < c2) || (c1 > -1 && c2 < 0))                            
+                            return s.substring(index, c1).trim();
+                        else if(c2 > 0)
+                            return s.substring(index, c2).trim();
 			
-			if(ind > -1) {
-				if(ind > 0 && str.charAt(ind-1) != ';' && str.charAt(ind-1) != ' ')
-					return "";
-                                
-				index +=ind + 1;
-				return str.substring(index, str.indexOf(';', index)).trim();
-			}			
-			return "";
+                        return "";
+
 		}
 		
 		else if(key == "text") {			
@@ -281,7 +283,7 @@ public abstract class SVGParser {
 			return s.substring(tIndex, s.indexOf('<', tIndex)).trim();
 		}
 		else if(s.indexOf("<"+key+" ") > -1) {
-			index += s.indexOf("<"+key)+1;
+			index = s.indexOf("<"+key)+1 + length;
 			return s.substring(index, s.indexOf('/', index)).trim();
 		}
 		
@@ -766,10 +768,12 @@ public abstract class SVGParser {
          
             if(!symId.isEmpty()) {                  
               symId =  symId.replace("#", "");
+              int index = attr.indexOf("href");
+              String cas = attr.replace(attr.substring(index, attr.indexOf('"', index+6)), " ");
 
               String symbol = chaseOut(SVG, symId, keys);
               if(isSelfClose(symbol, 0) > 0){
-                  return createSVG(symbol,"");
+                  return createSVG(symbol,cas);
               }
 
               if(!symbol.isEmpty()){
@@ -778,7 +782,7 @@ public abstract class SVGParser {
                   List<String> strList = listObjects(symbol, keys);
 
                   if(strList.size() == 1){
-                      return createSVG(strList.get(0),"");
+                      return createSVG(strList.get(0),cas);
                   }                        
                   else  {
                       return buildObjectList(strList, "");
