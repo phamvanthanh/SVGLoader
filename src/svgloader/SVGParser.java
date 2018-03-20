@@ -56,8 +56,8 @@ public abstract class SVGParser {
 		
             long start = System.currentTimeMillis();
             SVG = (new String(buf, 0, length))          
-                                .replaceAll("[\\t\\n\\r]+"," ")
-                                .replaceAll(" {2,}", " ")
+                                .replaceAll("[\\n\\r]+"," ")
+//                                .replaceAll(" {2,}", " ")
                                 .replaceAll("\\<\\?xml.+\\?\\>"," ")
                                 .replaceAll("\\<\\?metadata.+\\?\\>"," ")
                                 .replaceAll("<!--[\\s\\S]*?-->", "")
@@ -85,66 +85,66 @@ public abstract class SVGParser {
 		String attr = ""; 
                 char sc = xml.charAt(1); 
                 if(sc == 'p'  && xml.charAt(2) == 'a') {                   
-                    attr = getAttributeString(xml, "path")+cas;//                  
+                    attr = getAttributeString(xml, "path").replaceAll("\\t", " ")+cas;//                  
                     setPath(sh, attr);    
                    
 		}
                 else if(sc == 'r') {
                   
-                    attr = getAttributeString(xml, "rect")+cas;                    
+                    attr = getAttributeString(xml, "rect").replaceAll("\\t", " ")+cas;                    
                     setRect(sh, attr);
                
 		}
                 else if(sc == 'c') {
-                    attr = getAttributeString(xml, "circle")+cas;
+                    attr = getAttributeString(xml, "circle").replaceAll("\\t", " ")+cas;
                     setCircle(sh, attr);
                                     
 		}
                 else if(sc == 'e') {
-                    attr = getAttributeString(xml, "ellipse")+cas;
+                    attr = getAttributeString(xml, "ellipse").replaceAll("\\t", " ")+cas;
                     setEllipse(sh, attr);
                     
 		}
                 else if(sc == 'l' ) {
-                    attr = getAttributeString(xml, "line")+cas;
+                    attr = getAttributeString(xml, "line").replaceAll("\\t", " ")+cas;
                     setLine(sh, attr);
                     
 		}
                 else if(sc == 'p' && xml.charAt(5) == 'l') {
-                    attr = getAttributeString(xml, "polyline")+cas;
+                    attr = getAttributeString(xml, "polyline").replaceAll("\\t", " ")+cas;
                     setPolyline(sh, attr);
                                
 		}
                 else if(sc == 'p' && xml.charAt(5) == 'g') {
-                    attr = getAttributeString(xml, "polygon")+cas;
+                    attr = getAttributeString(xml, "polygon").replaceAll("\\t", " ")+cas;
                     setPolygon(sh, attr);
                                      
 		}
 		
 	}
         public void text(Text text, String s, String cas) { 
-            String attr = getAttributeString(s, "text")+cas;
+            String attr = getAttributeString(s, "text").replaceAll("\\t", " ")+cas;
             text.setText(getContent(s));
             setText(text, attr);     
                  
         }
         
         public void tspan(Text text, String s, String cas) { 
-            String attr = getAttributeString(s, "tspan")+cas;
+            String attr = getAttributeString(s, "tspan").replaceAll("\\t", " ")+cas;
             text.setText(getContent(s));
             setText(text, attr);                       
         }
         public void textFlow(TextFlow tf, String s, String cas){
-            String attr = getAttributeString(s, "text")+cas;
+            String attr = getAttributeString(s, "text").replaceAll("\\t", " ")+cas;
             setTextFlow(tf, attr);  
         }
         
         public void group(Group group, String xml, String cas){
-            String attr = cas;
+            String attr = "";
             if(xml.charAt(1) == 'g')
-                attr = getAttributeString(xml, "g") + attr;
+                attr = getAttributeString(xml, "g").replaceAll("\\t", " ") + cas;
             else 
-                attr = getAttributeString(xml, "svg") + attr;                    
+                attr = getAttributeString(xml, "svg").replaceAll("\\t", " ") + cas;                    
             setGroup(group, attr);
             
         }
@@ -153,9 +153,9 @@ public abstract class SVGParser {
             String attr = "";
            
             if(xml.charAt(3) == 'a')
-                attr = getAttributeString(xml, "image");
+                attr = getAttributeString(xml, "image").replaceAll("\\t", " ");
             else
-                attr = getAttributeString(xml, "img");          
+                attr = getAttributeString(xml, "img").replaceAll("\\t", " ");          
             
             int start = attr.indexOf(";base64,")+8;
             String data = attr.substring(start, attr.indexOf('"', start));            
@@ -172,8 +172,7 @@ public abstract class SVGParser {
           
             String attr = getAttributeString(xml, "use")+cas;
             setGroup(group, attr);
-            attr = removeUncascadedttributes(attr);
-            group.getChildren().addAll(getSymbol(attr));
+
         }
 	/**
 	search and parse double array for Polyline and Polygon
@@ -251,20 +250,20 @@ public abstract class SVGParser {
 	@return String the content of the given key
 	*/
 	public String getString(String s, String key) {
-
+                    
 		int index = key.length();
-              
+    
 		if(s.indexOf(" "+key+"=\"") > -1) {
-			index += s.indexOf(" "+key+"=\"")+3;
-			return s.substring(index, s.indexOf("\"", index)).trim();
+                    index += s.indexOf(" "+key+"=\"")+3;
+                    return s.substring(index, s.indexOf("\"", index)).trim();
 		}
-             
+                             
 		else if(s.indexOf(key+":") > -1) { //CASE OF CSS FORMAT
 			String str = "";
-
+//                        
 			if(s.indexOf("style") > -1)
-				str = getString(s, "style")+";";
-
+                            str = getString(s, "style")+";";
+                        
 			int ind = str.indexOf(key+":");
 			
 			if(ind > -1) {
@@ -298,7 +297,7 @@ public abstract class SVGParser {
 	public Paint getColor(String s, String key) {
 		
 		String color = getString(s, key);
-               
+//                 System.out.printf("String: %s, Key: %s, color: %s\n", s, key, color);
                 if(color.isEmpty())
                     return null;
 		else {
@@ -508,7 +507,7 @@ public abstract class SVGParser {
          */ 
         protected List<String> textSegregate(String s){
             List<String> list = new ArrayList<String>();
-            String[] S = {s.trim(), ""};
+            String[] S = {s, ""};
             int index = 0, last = 0, length = S[0].length();	
                    
             while(index < length)
@@ -524,8 +523,8 @@ public abstract class SVGParser {
                       
                    String t = S[0].substring(last, index - S[1].length());
                    last = index;
-                   t = t.trim();
-                   if(!t.isEmpty()){
+                   
+                   if(!t.trim().isEmpty()){
                         t = "<text>"+t+"</text>";
                         list.add(t);
                    } 
@@ -761,34 +760,31 @@ public abstract class SVGParser {
         }
         
         public List<Node> getSymbol(String attr){
-             String symId = getString(attr, "xlink:href");
-             if(symId.isEmpty())
-                 symId = getString(attr, "href");
+            String symId = getString(attr, "xlink:href");
+            if(symId.isEmpty())
+                symId = getString(attr, "href");
          
-              if(!symId.isEmpty()) {
-                  
-                symId =  symId.replace("#", "");
-               
-                String symbol = chaseOut(SVG, symId, keys);
-                if(isSelfClose(symbol, 0) > 0){
-                    return createSVG(symbol,"");
-                }
-                       
-                if(!symbol.isEmpty()){
-                    symbol = getContent(symbol);  
-                    
-                    List<String> strList = listObjects(symbol, keys);
+            if(!symId.isEmpty()) {                  
+              symId =  symId.replace("#", "");
 
-                    if(strList.size() == 1){
-                        return createSVG(strList.get(0),"");
+              String symbol = chaseOut(SVG, symId, keys);
+              if(isSelfClose(symbol, 0) > 0){
+                  return createSVG(symbol,"");
+              }
 
-                    }                        
-                    else  {
-                        return buildObjectList(strList, "");
+              if(!symbol.isEmpty()){
+                  symbol = getContent(symbol);  
 
-                    }      
-                                      
-                }
+                  List<String> strList = listObjects(symbol, keys);
+
+                  if(strList.size() == 1){
+                      return createSVG(strList.get(0),"");
+                  }                        
+                  else  {
+                      return buildObjectList(strList, "");
+                  }      
+
+              }
                 return null;
    
             }
@@ -867,7 +863,7 @@ public abstract class SVGParser {
 //            String spmd = getString(s, "spreadMethod");          
            
             List<Stop> sList = buildStopList(listObjects(getContent(s), "stop"));
-            List<String> stl = listObjects(getContent(s), "stop");
+
             LinearGradient lg = new LinearGradient(x1, y1, x2, y2, true, CycleMethod.NO_CYCLE, sList);
 
             return lg;
@@ -1065,8 +1061,8 @@ public abstract class SVGParser {
                 }
               
             }
-
-            text.setFont(Font.font(getString(attr, "font-family"), fw, fs));          
+           
+            text.setFont(Font.font(getString(attr, "font-family").replace("'", ""), fw, fs));          
             setStyle(text, attr);    
         }
         
@@ -1219,6 +1215,10 @@ public abstract class SVGParser {
             index = s.indexOf("xml:space=\"");
             if(index > -1)
                 s= s.replace(s.substring(index, s.indexOf('"', index+11)+1), " ");
+            
+            index = s.indexOf("version=\"");
+            if(index > -1)
+                s= s.replace(s.substring(index, s.indexOf('"', index+9)+1), " ");
             
            return s;
                     
