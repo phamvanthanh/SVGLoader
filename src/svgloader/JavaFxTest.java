@@ -38,16 +38,18 @@ public class JavaFxTest extends Application {
 			
                        
                         if(pl.isEmpty())
-                            loader = new SVGLoader("C:/test/9.svg");
+                            loader = new SVGLoader("C:/test/0132740648_9.svg");
                         else
                             loader = new SVGLoader(pl.get(0));	
                         long start = System.currentTimeMillis();
                         Pane svgPane = loader.loadSVG();
+                        
 
                         pane.getChildren().addAll(svgPane);
 //                        svgPane.setCache(true);
                         long end = System.currentTimeMillis();
                         primaryStage.show();
+//                        loader.close();
 			
                         System.out.println("Version: "+com.sun.javafx.runtime.VersionInfo.getRuntimeVersion());
 			System.out.println("Total time: "+(end-start)+ " mili secs");
