@@ -32,9 +32,10 @@ public class JavaFxTest extends Application {
 			StackPane  pane = new StackPane();
 						
 			Parent root = new Pane(pane);												
-			Scene scene = new Scene(root);			
+			Scene scene = new Scene(root);
+                        
 			primaryStage.setScene(scene);			
-			primaryStage.setTitle("Test Window");		
+			primaryStage.setTitle("Test SVGLoader Window");		
 			
                        
                         if(pl.isEmpty())
@@ -46,7 +47,7 @@ public class JavaFxTest extends Application {
                         
 
                         pane.getChildren().addAll(svgPane);
-//                        svgPane.setCache(true);
+                        svgPane.setCache(true);
                         long end = System.currentTimeMillis();
                         primaryStage.show();
 //                        loader.close();

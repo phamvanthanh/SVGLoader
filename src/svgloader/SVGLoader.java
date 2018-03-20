@@ -74,7 +74,7 @@ public class SVGLoader extends SVGParser {
 	public List<Node> createSVG(String xml, String cas) { 
                
 		String key = findKey(xml, 0, keys); 
-
+//                System.out.println(xml.substring(0, 100));
                 List<Node> nList = new ArrayList<Node>();
                 char fc = key.charAt(0);
 		if(fc == 's' && key.charAt(2)== 'g') { //svg
@@ -88,8 +88,8 @@ public class SVGLoader extends SVGParser {
                                 Group group = new Group();
                                 group.setLayoutX(x);
 				group.setLayoutY(y);
-                                group(group, xml, cas);
-//                                executor.submit(new GroupBuilder(group, xml, cas, this));
+//                                group(group, xml, cas);
+                                executor.submit(new GroupBuilder(group, xml, cas, this));
                                 List<String>  list = listObjects(cont, keys);  
 
                                 attr = removeUncascadedttributes(attr) + cas;
@@ -109,8 +109,8 @@ public class SVGLoader extends SVGParser {
                             if(!cont.isEmpty()) {   
                                  
                                     Group group = new Group(); 
-                                    group(group, xml, cas);
-//                                    executor.submit(new GroupBuilder(group, xml, cas, this));
+//                                    group(group, xml, cas);
+                                    executor.submit(new GroupBuilder(group, xml, cas, this));
                                     nList.add(group);
                                     
                                     List<String>  list = listObjects(cont, keys);
@@ -133,8 +133,8 @@ public class SVGLoader extends SVGParser {
                  else if(fc == 'u'){
                        
                         Group use = new Group(); 
-                        use(use, xml, cas);
-//                        executor.submit(new UseBuilder(use, xml, cas, this));
+//                        use(use, xml, cas);
+                        executor.submit(new UseBuilder(use, xml, cas, this));
                         nList.add(use);                                 
                         return nList;
                    
@@ -149,8 +149,8 @@ public class SVGLoader extends SVGParser {
                         xml = xml.replace("/text>", "/g>");
                         
                         Group group = new Group(); 
-                        group(group, xml, cas);
-//                        executor.submit(new GroupBuilder(group, xml, cas, this));
+//                        group(group, xml, cas);
+                        executor.submit(new GroupBuilder(group, xml, cas, this));
                         nList.add(group);
                         String attr = getAttributeString(xml, "g");
 
@@ -163,8 +163,8 @@ public class SVGLoader extends SVGParser {
                     }
                     else {
                         Text text = new Text();
-                        text(text, xml, cas);
-//                        executor.submit(new TextBuilder(text, xml, cas, this));
+//                        text(text, xml, cas);
+                        executor.submit(new TextBuilder(text, xml, cas, this));
                         nList.add(text);
                         return nList;    
                     }
@@ -173,24 +173,24 @@ public class SVGLoader extends SVGParser {
                  else if(fc == 't' && key.length() == 5){
                       
                         Text text = new Text(); 
-                        text(text, xml, cas);
-//                        executor.submit(new tspanBuilder(text, xml, cas, this));
+//                        text(text, xml, cas);
+                        executor.submit(new tspanBuilder(text, xml, cas, this));
                         nList.add(text);
                         return nList;   
                  }
                  else if(fc == 'i'){ // image/img
                     
                     ImageView img = new ImageView();
-                    image(img, xml, cas);
-//                    executor.submit(new ImageBuilder(img, xml, cas, this));
+//                    image(img, xml, cas);
+                    executor.submit(new ImageBuilder(img, xml, cas, this));
                     nList.add(img);                    
                     return nList;
                  }              
 		 else if(!key.isEmpty()) {
                     
                     SVGPath shape = new SVGPath();
-                    shape(shape, xml, cas);
-//                    executor.submit(new ShapeBuilder(shape, xml, cas, this));              
+//                    shape(shape, xml, cas);
+                    executor.submit(new ShapeBuilder(shape, xml, cas, this));              
                     nList.add(shape);            
                     return nList;          
                      

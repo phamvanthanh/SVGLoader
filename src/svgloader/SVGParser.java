@@ -25,7 +25,6 @@ import javafx.scene.shape.StrokeLineJoin;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
-import javafx.scene.text.TextAlignment;
 import javafx.scene.text.TextFlow;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Transform;
@@ -465,7 +464,8 @@ public abstract class SVGParser {
                        key = findKey(s, index, keys);
                                             
 			if(!key.isEmpty())			
-			{				
+			{
+				
                             index = svgObject(S, key, index);       
 
                             list.add(S[1]);
@@ -707,17 +707,15 @@ public abstract class SVGParser {
                 clipId =  clipId.substring(clipId.indexOf('(')+2, clipId.indexOf(')'));
                 
                 String clipPath = chaseOut(SVG, clipId, keys);
-                
                 int index = s.indexOf("clip-path=\"");
-                String attr = s.replace(s.substring(index, s.indexOf('"', index+12)), "");
-//                System.out.println(attr);
+                String attr = s.replace(s.substring(index, s.indexOf('"', index+11)), "");
                 String key = findKey(clipPath, 0, keys);
                 if(key.charAt(0) == 'c'){ //clipPath
                     clipPath = getContent(clipPath);  
 
                     List<String> strList = listObjects(clipPath, keys);
                     if(strList.size() == 1){
-                        return createSVG(strList.get(0), attr).get(0);
+                        return createSVG(strList.get(0),attr).get(0);
                     }
                         
                     else {
@@ -869,7 +867,7 @@ public abstract class SVGParser {
 //            String spmd = getString(s, "spreadMethod");          
            
             List<Stop> sList = buildStopList(listObjects(getContent(s), "stop"));
-          
+            List<String> stl = listObjects(getContent(s), "stop");
             LinearGradient lg = new LinearGradient(x1, y1, x2, y2, true, CycleMethod.NO_CYCLE, sList);
 
             return lg;
@@ -891,17 +889,15 @@ public abstract class SVGParser {
             Transform trans = getTransform(attr); 
             
             if(trans != null){
-                group.getTransforms().add(trans);                
+                group.getTransforms().add(trans);
+                
             }
-         
             Node clip = getClip(attr);           
-            if(clip != null)
-                group.setClip(clip); 
-               
+               if(clip != null)
+                   group.setClip(clip); 
             Node mask = getMask(attr);
-            if(mask != null)
-                group.setClip(mask);
-            
+               if(mask != null)
+                   group.setClip(mask);
             group.setLayoutX(getValue(attr, "x"));
             group.setLayoutY(getValue(attr, "y"));
         }
@@ -1066,7 +1062,8 @@ public abstract class SVGParser {
                     default:
                         break;
                         
-                }              
+                }
+              
             }
 
             text.setFont(Font.font(getString(attr, "font-family"), fw, fs));          
@@ -1179,6 +1176,8 @@ public abstract class SVGParser {
             index  = s.indexOf("height=");
             if(index > -1)
                 s = s.replace(s.substring(index, s.indexOf('"', index+9)+1), " ");
+            
+            
             return s;
                 
         }
@@ -1217,21 +1216,9 @@ public abstract class SVGParser {
             if(index > -1)
                 s= s.replace(s.substring(index, s.indexOf('"', index+16)+1), " ");
             
-            index = s.indexOf("viewBox=\"");
-            if(index > -1)
-                s= s.replace(s.substring(index, s.indexOf('"', index+10)+1), " ");
-            
-            index = s.indexOf("version=\"");
-            if(index > -1)
-                s= s.replace(s.substring(index, s.indexOf('"', index+10)+1), " ");
-            
-            index = s.indexOf("version=\"");
-            if(index > -1)
-                s= s.replace(s.substring(index, s.indexOf('"', index+10)+1), " ");
-            
             index = s.indexOf("xml:space=\"");
             if(index > -1)
-                s= s.replace(s.substring(index, s.indexOf('"', index+12)+1), " ");
+                s= s.replace(s.substring(index, s.indexOf('"', index+11)+1), " ");
             
            return s;
                     
