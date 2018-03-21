@@ -2,10 +2,13 @@ package svgloader;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 import javafx.scene.Group;
 import javafx.scene.Node;
@@ -46,11 +49,12 @@ public abstract class SVGParser {
 	    int length = 0;
 		
 	    if(svgName.endsWith(".svg")) {
-	 	FileInputStream inFile = new FileInputStream(svgName);
+	 	FileInputStream inFile = new FileInputStream(svgName);                
 		buf = new byte[inFile.available()];
 		length = inFile.read(buf);
-                inFile.close();
-			
+                inFile.close();	
+                dir = svgName.replace(svgName.substring(svgName.lastIndexOf('/')+1), "");
+//                System.out.println(dir);
 	    }
 		
 		
@@ -149,17 +153,32 @@ public abstract class SVGParser {
         }
         
         public void image(ImageView img, String xml, String cas) {
-            String attr = getAttributeString(xml, "image");
-           
+            String attr = getAttributeString(xml, "image");           
             if(xml.charAt(3) == 'g')
                 attr = getAttributeString(xml, "img");                      
             
-            int start = attr.indexOf(";base64,") + 8;
-            String data = attr.substring(start, attr.indexOf('"', start));            
+            int start = attr.indexOf(";base64,");
+            if(start > -1){
+                start += 8;
+                String data = attr.substring(start, attr.indexOf('"', start));            
    
-            data = data.replaceAll(" ", "");
-            byte[] dc = Base64.getDecoder().decode(data);               
-            img.setImage(new Image(new ByteArrayInputStream(dc)));        
+                data = data.replaceAll(" ", "");
+                byte[] dc = Base64.getDecoder().decode(data);               
+                img.setImage(new Image(new ByteArrayInputStream(dc)));   
+            }
+            else {
+                String fname = getString(attr, "xlink:href");
+                if(fname.isEmpty())
+                    fname = getString(attr, "href");
+              
+                try {
+                    img.setImage(new Image(new FileInputStream(dir+fname)));
+                } catch (Exception ex) {
+                   
+                }
+                
+            }
+                 
             attr += cas;
             setImage(img, attr);
             
@@ -612,18 +631,18 @@ public abstract class SVGParser {
             else {
              
                 String rep = attr.substring(cIndex, attr.indexOf('"', cIndex+7)+1);                
-                return attr.replace(rep, getClass(rep.substring(7, rep.length()-1)));
+                return attr + attr.replace(rep, getClass(rep.substring(7, rep.length()-1)));
             }
 	}	
 	public FillRule getFillRule(String s) { // Get fill rule attribute
 			
-                String valStr = getString(s, "fill-rule");
-                if(valStr.isEmpty())
-                    valStr = getString(s, "clip-rule");
-		if(valStr.indexOf('e') == 0){                   
-                    return FillRule.EVEN_ODD;
-                }	
-		return FillRule.NON_ZERO;
+            String valStr = getString(s, "fill-rule");
+            if(valStr.isEmpty())
+                valStr = getString(s, "clip-rule");
+	    if(valStr.indexOf('e') == 0){                   
+                return FillRule.EVEN_ODD;
+            }	
+	    return FillRule.NON_ZERO;
 	}
         
        
@@ -634,12 +653,12 @@ public abstract class SVGParser {
 	*/
 	public StrokeLineCap getStrokeLineCap(String s) { //
 		
-		s = getString(s, "stroke-linecap");
-		if(s.indexOf('r') == 0)
-			return StrokeLineCap.ROUND;
-		else if(s.indexOf('s') == 0)
-			return StrokeLineCap.SQUARE;	
-		return StrokeLineCap.BUTT;
+	    s = getString(s, "stroke-linecap");
+	    if(s.indexOf('r') == 0)
+		return StrokeLineCap.ROUND;
+	    else if(s.indexOf('s') == 0)
+		return StrokeLineCap.SQUARE;	
+	    return StrokeLineCap.BUTT;
 	}
 	/**
 	 * Search and parse stroke line join 
@@ -648,14 +667,14 @@ public abstract class SVGParser {
 	 */
 	public StrokeLineJoin getStrokeLineJoin(String s) {
 	
-		s = getString(s, "stroke-linejoin");
+	    s = getString(s, "stroke-linejoin");
 		
-		if(s.indexOf('m') == 0)
-			return StrokeLineJoin.MITER;
-		else if(s.indexOf('b') == 0)
-			return StrokeLineJoin.BEVEL;
+	    if(s.indexOf('m') == 0)
+		return StrokeLineJoin.MITER;
+            else if(s.indexOf('b') == 0)
+		return StrokeLineJoin.BEVEL;
 		
-		return StrokeLineJoin.ROUND;
+	    return StrokeLineJoin.ROUND;
 	
 	}
 	/**
@@ -664,7 +683,7 @@ public abstract class SVGParser {
 	 * @return double stroke miter limit value
 	 */
 	public double getStrokeMiterLimit(String s) {
-		return getValue(s, "stroke-miterlimit");
+	    return getValue(s, "stroke-miterlimit");
 	}
 	/**
 	 * Search and parse transform
@@ -1242,9 +1261,9 @@ public abstract class SVGParser {
            return s;
                     
         }
-        	
-	protected String SVG;	
-	protected String[] keys = {"path",  "g", "svg",  "text", "tspan",  "image", "img", "use", "polygon", "polyline", "rect", "line", "ellipse", "circle" }; //
+    protected String dir;   	
+    protected String SVG;	
+    protected String[] keys = {"path",  "g", "svg",  "text", "tspan",  "image", "img", "use", "polygon", "polyline", "rect", "line", "ellipse", "circle" }; //
     private String[] aKeys = {"defs", "stop", "linearGradient", "radialGradient", "clipPath", "symbol"};
        
 }
