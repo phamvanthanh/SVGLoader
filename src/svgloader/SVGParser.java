@@ -42,21 +42,21 @@ public abstract class SVGParser {
         
 	public SVGParser(String svgName) throws Exception {
 		
-                byte[] buf = null;
-		int length = 0;
+            byte[] buf = null;
+	    int length = 0;
 		
-		if(svgName.endsWith(".svg")) {
-			FileInputStream inFile = new FileInputStream(svgName);
-			buf = new byte[inFile.available()];
-			length = inFile.read(buf);
-                        inFile.close();
+	    if(svgName.endsWith(".svg")) {
+	 	FileInputStream inFile = new FileInputStream(svgName);
+		buf = new byte[inFile.available()];
+		length = inFile.read(buf);
+                inFile.close();
 			
-		}
+	    }
 		
 		
             long start = System.currentTimeMillis();
             SVG = (new String(buf, 0, length))          
-                                .replaceAll("[\\n\\r]+"," ")
+                                .replaceAll("[\\n]+"," ")
 //                                .replaceAll(" {2,}", " ")
                                 .replaceAll("\\<\\?xml.+\\?\\>"," ")
                                 .replaceAll("\\<\\?metadata.+\\?\\>"," ")
@@ -82,10 +82,10 @@ public abstract class SVGParser {
         public abstract List<Node> createSVG(String xml, String cas);
         public abstract List<Node> buildObjectList(List<String> list, String cas);
 	public void shape(SVGPath sh, String xml, String cas) { 
-		String attr = ""; 
+		String attr; 
                 char sc = xml.charAt(1); 
                 if(sc == 'p'  && xml.charAt(2) == 'a') {                   
-                    attr = getAttributeString(xml, "path") + cas;//                  
+                    attr = getAttributeString(xml, "path")  + cas;//                  
                     setPath(sh, attr);    
                    
 		}
@@ -117,8 +117,7 @@ public abstract class SVGParser {
 		}
                 else if(sc == 'p' && xml.charAt(5) == 'g') {
                     attr = getAttributeString(xml, "polygon") + cas;
-                    setPolygon(sh, attr);
-                                     
+                    setPolygon(sh, attr);                                     
 		}
 		
 	}
@@ -150,12 +149,10 @@ public abstract class SVGParser {
         }
         
         public void image(ImageView img, String xml, String cas) {
-            String attr = "";
+            String attr = getAttributeString(xml, "image");
            
-            if(xml.charAt(3) == 'a')
-                attr = getAttributeString(xml, "image");
-            else
-                attr = getAttributeString(xml, "img");          
+            if(xml.charAt(3) == 'g')
+                attr = getAttributeString(xml, "img");                      
             
             int start = attr.indexOf(";base64,") + 8;
             String data = attr.substring(start, attr.indexOf('"', start));            
@@ -251,36 +248,36 @@ public abstract class SVGParser {
 	*/
 	public String getString(String s, String key) {
                     
-		  int length = key.length();
-                int index = s.indexOf(" "+key+"=\"");
+		int length = key.length();
+            int index = s.indexOf(" "+key+"=\"");
 		if( index > -1) {
-                    index = index + 3 + length;
-                    return s.substring(index, s.indexOf("\"", index)).trim();
+            index = index + 3 + length;
+            return s.substring(index, s.indexOf("\"", index)).trim();
               
 		}
                              
 		else if( s.indexOf(key+":") > -1) { //CASE OF CSS FORMAT
                
 			index = s.indexOf(key+":");		
-                        if(index > 0 && s.charAt(index-1) != ';' && s.charAt(index-1) != ' ' && s.charAt(index-1) != '"')
-                            return "";
+            if(index > 0 && s.charAt(index-1) != ';' && s.charAt(index-1) != ' ' && s.charAt(index-1) != '"')
+                return "";
 
-                        index =index + 1 +length;
-                        int c1 = s.indexOf(';', index);
-                        int c2 = s.indexOf('"', index);
+            index =index + 1 +length;
+            int c1 = s.indexOf(';', index);
+            int c2 = s.indexOf('"', index);
                         
-                        if((c1 > -1 && c1 < c2) || (c1 > -1 && c2 < 0))                            
-                            return s.substring(index, c1).trim();
-                        else if(c2 > 0)
-                            return s.substring(index, c2).trim();
+            if((c1 > -1 && c1 < c2) || (c1 > -1 && c2 < 0))                            
+                return s.substring(index, c1).trim();
+            else if(c2 > 0)
+                return s.substring(index, c2).trim();
 			
-                        return "";
+            return "";
 
 		}
 		
 		else if(key == "text") {			
-			int tIndex = s.indexOf('>')+1;
-			return s.substring(tIndex, s.indexOf('<', tIndex)).trim();
+			index = s.indexOf('>')+1;
+			return s.substring(index, s.indexOf('<', index)).trim();
 		}
 		else if(s.indexOf("<"+key+" ") > -1) {
 			index = s.indexOf("<"+key)+1 + length;
@@ -290,42 +287,57 @@ public abstract class SVGParser {
 		return "";	
 				
 	}
+        
+        protected String getClass(String cls) {
+          
+            int start = SVG.indexOf("."+cls);
+            if(start > -1) {
+                start = SVG.indexOf("{", start);
+                int end = SVG.indexOf("}", start);            
+                String sub= SVG.substring(start+1, end-1);
+                
+                return sub;
+            }
+            return "";
+                     
+           
+        }
 	/**
 	search and parse the color of the given key
 	@param s String, the parsing string
 	@param key String the designated key (e.g. key fill -> <rect...fill="blue".../>)
 	@return Color JavaFX color of the given key
 	*/
-	public Paint getColor(String s, String key) {
+	protected Paint getColor(String s, String key) {
 		
 		String color = getString(s, key);
-//                 System.out.printf("String: %s, Key: %s, color: %s\n", s, key, color);
-                if(color.isEmpty())
-                    return null;
+
+		if(color.isEmpty())
+			return null;
 		else {
 
-                        if(color.indexOf("url") > -1){
+			if(color.indexOf("url") > -1){
                             
-                            String fId = color.substring(color.indexOf('#')+1, color.indexOf(')'));
-                            String defs = chaseOut(SVG, fId, aKeys);                           
-                            if(defs.contains("<linearGradient"))
-                                return getLinearGradient(defs);
-                            else if(defs.contains("<radialGradient")){                             
-                                return getRadialGradient(defs);
-                            }                                
-                        }
-                        else {
-                            SVGColor svgColor = new SVGColor();
-                            double op = opacityValue(s, key+"-opacity");
-                            return svgColor.svgColor(color, op); // SVGColor API
-                        }
+				String fId = color.substring(color.indexOf('#')+1, color.indexOf(')'));
+				String defs = chaseOut(SVG, fId, aKeys);                           
+				if(defs.contains("<linearGradient"))
+					return getLinearGradient(defs);
+				else if(defs.contains("<radialGradient")){                             
+					return getRadialGradient(defs);
+				}                                
+			}
+			else {
+				SVGColor svgColor = new SVGColor();
+				double op = opacityValue(s, key+"-opacity");
+				return svgColor.svgColor(color, op); // SVGColor API
+			}
 			return null;
 		}
 		
 			
 	}
         
-        protected Color getColor(String s, String color, String opacity) {
+	protected Color getColor(String s, String color, String opacity) {
 		
 		String c = getString(s, color);		
 		
@@ -342,13 +354,14 @@ public abstract class SVGParser {
 	@param s String, the parsing string
 	@param key String the designated key (e.g. key fill-opacity -> <rect...fill-opacity="0.5".../>)
 	@return double opacity value of JavaFX color of the given key*/
-	public double opacityValue(String s, String key) {		
+	public double opacityValue(String s, String key) {
+		
 		String valStr = getString(s, key).trim();
                
-                if(valStr.isEmpty())
-                    return 1.0;
+		if(valStr.isEmpty())
+            return 1.0;
 		else
-                    return  Tool.toDouble(valStr);
+            return  Tool.toDouble(valStr);
 	
 	}
 	
@@ -392,13 +405,11 @@ public abstract class SVGParser {
 						break;						
 				}				
 			}	
-            //System.out.printf("start: %d, close: %d, length: %d\n", start, close, S[0].length());           
+          
 			rst = S[0].substring(start, close);
-                        S[1]= rst;
-//                        System.out.println(S[1]);
-//                        System.out.println();
-						 
-                        return start + rst.length();
+            S[1]= rst;
+				
+            return start + rst.length();
 		}
 		S[1]= rst;              
 		return index;
@@ -420,12 +431,13 @@ public abstract class SVGParser {
          * @return -1 if not self-close, index for next search if self-close
          */
 	private int isSelfClose(String s, int index) {
+		
 		int close = s.indexOf('>', index);		
 		
 		if(close > 0) {
-                    if(s.charAt(close-1) == '/') {				
-                        return close+1;
-                    }
+            if(s.charAt(close - 1) == '/')				
+                return close + 1;
+                  
 		}	
 		return -1;
 	}
@@ -436,12 +448,12 @@ public abstract class SVGParser {
          */
 	protected String getContent(String s) { //Get content of a balanced tag
 
-		 int start = s.indexOf('>');
-		 int end = s.lastIndexOf('<');
-		 if( end > start && start > -1) {                      
-                    return s.substring(start+1, end);			 
-		 }			 
-		 return "";
+		int start = s.indexOf('>');
+		int end = s.lastIndexOf('<');
+		if( end > start && start > -1) {                      
+            return s.substring(start + 1, end);			 
+		}			 
+		return "";
 	}	
 	
         /**
@@ -452,9 +464,9 @@ public abstract class SVGParser {
          */
 	protected List<String> listObjects(String s, String[] keys) { // List with a list of keys
 		
-                long start = System.nanoTime();
+        long start = System.nanoTime();
                         
-                List<String> list = new ArrayList<String>();
+        List<String> list = new ArrayList<String>();
 		String[] S = {s, ""};
 		int index = 0,  length = S[0].length();	
 		String key;
@@ -462,22 +474,20 @@ public abstract class SVGParser {
 		while(index < length)
 		{
 			
-                       key = findKey(s, index, keys);
+            key = findKey(s, index, keys);
                                             
 			if(!key.isEmpty())			
 			{
 				
-                            index = svgObject(S, key, index);       
-
-                            list.add(S[1]);
+                index = svgObject(S, key, index);
+                list.add(S[1]);
 			}
-			else {
+			else
 				return list;
-			}			
+					
 		}
-//                 System.out.printf("Index: %d, Length: %d \n", index, length);
-                long end = System.nanoTime();
-                time += (end-start);
+            long end = System.nanoTime();
+            time += (end-start);
 
 		return list;
 	}
@@ -487,7 +497,7 @@ public abstract class SVGParser {
          * @param key tag key to build list
          * @return list of xml tags 
          */
-        protected List<String> listObjects(String s, String key){ // List with a specific key
+    protected List<String> listObjects(String s, String key){ // List with a specific key
             List<String> list = new ArrayList<String>();
             String[] S = {s, ""};
             int index = 0,  length = S[0].length();	
@@ -501,13 +511,14 @@ public abstract class SVGParser {
             }
 
             return list;
-        }
+    }
         /**
          * Search and build text tags
          * @param s input text string
          * @return list of xml text tags
          */ 
-        protected List<String> textSegregate(String s){
+    protected List<String> textSegregate(String s){
+			
             List<String> list = new ArrayList<String>();
             String[] S = {s, ""};
             int index = 0, last = 0, length = S[0].length();	
@@ -517,7 +528,7 @@ public abstract class SVGParser {
                 index = svgObject(S, "tspan", index);
               
                 if(S[1].length() == 0){ // Not more tspan
-                    String t = "<text>"+S[0].substring(last)+"</text>"; // text all last text as text
+                    String t = "<text>"+S[0].substring(last)+"\\s</text>"; // text all last text as text
                     list.add(t);                   
                     return list;
                 }
@@ -527,7 +538,7 @@ public abstract class SVGParser {
                    last = index;
                    
                    if(!t.trim().isEmpty()){
-                        t = "<text>"+t+"</text>";
+                        t = "<text>"+t+"\\s</text>";
                         list.add(t);
                    } 
                    list.add(S[1]);  
@@ -537,7 +548,7 @@ public abstract class SVGParser {
             }
            
             return list;
-        }
+    }
         /**
          * Search for nearest xml tag key
          * @param s input string to search
@@ -547,23 +558,23 @@ public abstract class SVGParser {
          */
 	protected String findKey(String s, int index, String[] keys) { // Find nearest tag key (combine methods for better speed)		
 		
-		int start = s.indexOf('<', index);
+		    int start = s.indexOf('<', index);
              
-		if(start > -1) {
+		    if(start > -1) {
                      
-                        if(s.indexOf('/', start) == start+1){
-                           return loopFindKey(s, index, keys);
-                        }
-                        else {
-                            int end1 = s.indexOf(' ', start+1);
-                            int end2 = s.indexOf('>', start+1);
-                            if(end1 > -1 && end1 < end2)
-                                return s.substring(start+1, end1);
-                            else
-                                return s.substring(start+1, end2);
-                        }            
-		} 
-                return "";		
+                if(s.indexOf('/', start) == start+1){
+                    return loopFindKey(s, index, keys);
+                }
+                else {
+                    int end1 = s.indexOf(' ', start+1);
+                    int end2 = s.indexOf('>', start+1);
+                    if(end1 > -1 && end1 < end2)
+                        return s.substring(start+1, end1);
+                    else
+                        return s.substring(start+1, end2);
+                }            
+		    } 
+            return "";		
 		 
 	}
         /**
@@ -573,20 +584,20 @@ public abstract class SVGParser {
          * @param keys array of key to loop
          * @return 
          */
-        private String loopFindKey(String s, int index, String[] keys){
-            	int ind = s.length(); int curInd = -1; String key = ""; 
-		int length = keys.length;
-//                count++;                
-		for(int i =0; i < length; i++) {
-			curInd = s.indexOf("<"+keys[i],index);
-			if(curInd > -1 && curInd < ind) {
-				ind = curInd;
-				key = keys[i];
-			}
-		}
+    private String loopFindKey(String s, int index, String[] keys){
+            int ind = s.length(); int curInd = -1; String key = ""; 
+			int length = keys.length;
                 
-                return key;
-        }
+			for(int i =0; i < length; i++) {
+			    curInd = s.indexOf("<"+keys[i],index);
+			    if(curInd > -1 && curInd < ind) {
+				    ind = curInd;
+				    key = keys[i];
+			    }
+		    }
+                
+            return key;
+    }
         /**
          * Search attribute string for an valid xml tag
          * @param xml input xml tag string to search
@@ -594,7 +605,15 @@ public abstract class SVGParser {
          * @return attribute string 
          */	
 	protected String getAttributeString(String xml, String key) { // Get all attribute string of a tag		
-		return xml.substring(xml.indexOf('<')+key.length()+1, xml.indexOf('>'));
+            String attr = xml.substring(xml.indexOf('<')+key.length()+1, xml.indexOf('>'));
+            int cIndex = attr.indexOf("class");
+            if(cIndex < 0)
+                return attr;
+            else {
+             
+                String rep = attr.substring(cIndex, attr.indexOf('"', cIndex+7)+1);                
+                return attr.replace(rep, getClass(rep.substring(7, rep.length()-1)));
+            }
 	}	
 	public FillRule getFillRule(String s) { // Get fill rule attribute
 			
@@ -656,45 +675,41 @@ public abstract class SVGParser {
 
 		String trans = getString(s, "transform");
             
-                if(trans.isEmpty())
-                    return null;
-		else {
+            if(trans.isEmpty())
+                return null;
+		    else {
                       
-			String arrStr =  trans.substring(trans.indexOf('(')+1, trans.indexOf(')')).trim();
-                        if(arrStr.isEmpty())
-                            return null;
-                        else {
+			    String arrStr =  trans.substring(trans.indexOf('(')+1, trans.indexOf(')')).trim();
+                if(arrStr.isEmpty())
+                    return null;
+                else {
 
-                            double [] arr =  Arrays.stream(arrStr.split("[\\s,]")) 
+                    double [] arr =  Arrays.stream(arrStr.split("[\\s,]")) 
                                                    .mapToDouble(Tool::toDouble)
                                                    .toArray();
                             
-                            int len = arr.length;
-                            char fc = trans.charAt(0);
-                            if(fc == 'r') { //rotate
-                                    if(len == 1)
-                                            return new Rotate(arr[0]);
-                                    else if(len == 3)
-                                            return new Rotate(arr[0], arr[1], arr[2]);
-                                    else if(len == 4)
-                                            return new Rotate(arr[0], arr[1], arr[2], arr[3]);				
-                            }
-                            else if(fc == 'm') {                                         
-                                    if(len==6)
-                                            return Transform.affine(arr[0], arr[1], arr[2], arr[3], arr[4], arr[5]);
-                            }
-                            else if(fc == 't'){
-                                   if(len == 2) 
-                                        return Transform.translate(arr[0], arr[1]);
+                    int len = arr.length;
+                    char fc = trans.charAt(0);
+                    if(fc == 'r') { //rotate
+                        if(len == 1)
+                            return new Rotate(arr[0]);
+                        else if(len == 3)
+                            return new Rotate(arr[0], arr[1], arr[2]);
+                        else if(len == 4)
+                            return new Rotate(arr[0], arr[1], arr[2], arr[3]);				
+                    }
+                    else if(fc == 'm') {                                         
+                        if(len==6)
+                            return Transform.affine(arr[0], arr[1], arr[2], arr[3], arr[4], arr[5]);
+                    }
+                    else if(fc == 't'){
+                        if(len == 2) 
+                            return Transform.translate(arr[0], arr[1]);
 
-                            }
-                            return null;
-                            }
-			
-		}
-		
-	
-	}
+                    }
+                    return null;
+                }			
+		}	}
         /**
          * 
          * @param s
@@ -795,7 +810,7 @@ public abstract class SVGParser {
             return null;
         }
         protected String chaseOut(String s, String key, String[] keys){
-//            int pos = s.indexOf(key);
+
             int pos = s.indexOf("id=\""+key);
             if(pos > 0){
                 int begin = s.lastIndexOf('<', pos);
@@ -888,16 +903,16 @@ public abstract class SVGParser {
         public void setGroup(Group group, String attr){
             Transform trans = getTransform(attr); 
             
-            if(trans != null){
+            if(trans != null)
                 group.getTransforms().add(trans);
                 
-            }
+         
             Node clip = getClip(attr);           
-               if(clip != null)
-                   group.setClip(clip); 
+            if(clip != null)
+                group.setClip(clip); 
             Node mask = getMask(attr);
-               if(mask != null)
-                   group.setClip(mask);
+            if(mask != null)
+                group.setClip(mask);
             group.setLayoutX(getValue(attr, "x"));
             group.setLayoutY(getValue(attr, "y"));
         }
@@ -913,12 +928,12 @@ public abstract class SVGParser {
         }
         
         protected void setRect(SVGPath shape, String attr){
-             double x = getValue(attr, "x"), 
-                    y = getValue(attr, "y"), 
-                    width = getValue(attr, "width"),
-                    height = getValue(attr, "height"),
-                    rx = getValue(attr, "rx"),
-                    ry = getValue(attr, "ry");
+            double x = getValue(attr, "x"), 
+                y = getValue(attr, "y"), 
+                width = getValue(attr, "width"),
+                height = getValue(attr, "height"),
+                rx = getValue(attr, "rx"),
+                ry = getValue(attr, "ry");
       
           
             String c1 = " A"+rx+" "+ry+" "+45+" "+0+" "+1+" "+(x+rx)+" "+(y);            
@@ -939,9 +954,9 @@ public abstract class SVGParser {
             double[] points = doubleArray(getString(attr, "points"));
             int length = points.length;
             String s = "M"+points[0]+","+points[1];
-            for(int i = 2; i < length; i = i+2){
-                 s +=" L"+points[i]+","+points[i+1];
-            }         
+            for(int i = 2; i < length; i = i+2)
+                s +=" L"+points[i]+","+points[i+1];
+                     
             shape.setContent(s);
             setStyle(shape, attr);  
         }
@@ -951,10 +966,9 @@ public abstract class SVGParser {
             double[] points = doubleArray(getString(attr, "points"));		 
             int length = points.length;
             String s = "M"+points[0]+","+points[1];
-            for(int i = 2; i < length; i = i+2){
+            for(int i = 2; i < length; i = i+2)
                 s +=" L"+points[i]+","+points[i+1];
-            }
-         
+                     
             shape.setContent(s+" z");
             setStyle(shape, attr);   
         }
@@ -1008,6 +1022,7 @@ public abstract class SVGParser {
             img.setLayoutY(y);
             img.setFitHeight(height);
             img.setFitWidth(width);
+            img.setSmooth(true);
             
             Transform trans = getTransform(s);
 		if(trans != null)
@@ -1086,35 +1101,35 @@ public abstract class SVGParser {
         
         private void setStyle(Shape sh, String s){
                
-                Paint stk = getColor(s, "stroke");
-                sh.setStroke(stk);
+            Paint strk = getColor(s, "stroke");
+            sh.setStroke(strk);
                  
-                Paint paint = getColor(s, "fill");
-                if(paint == null)
-                     sh.setFill(Color.BLACK);              
-                else                   
-                    sh.setFill(paint);
-		double sw = getValue(s, "stroke-width");
-		if(!(sw > 0.0000001) )
-			sw = 1;
-		sh.setStrokeWidth(sw);
-		sh.setOpacity(opacityValue(s, "opacity"));
+            Paint fill = getColor(s, "fill");
+            if(fill == null)
+                sh.setFill(Color.BLACK);              
+            else                   
+                sh.setFill(fill);
+		    double sw = getValue(s, "stroke-width");
+		    if(!(sw > 0.0000001) )
+			    sw = 1;
+		    sh.setStrokeWidth(sw);
+		    sh.setOpacity(opacityValue(s, "opacity"));
 		
-		String arr = getString(s, "stroke-dasharray");
+		    String arr = getString(s, "stroke-dasharray");
                 Double[] dArr = _doubleArray(arr);
-		if(dArr != null)
-			sh.getStrokeDashArray().addAll(dArr);		
+		    if(dArr != null)
+			    sh.getStrokeDashArray().addAll(dArr);		
                 
-		Transform trans = getTransform(s);
-		if(trans != null)
-			sh.getTransforms().add(trans);
-                Node clip = getClip(s);
-                if(clip != null)
-                    sh.setClip(clip);  
+		    Transform trans = getTransform(s);
+		    if(trans != null)
+			    sh.getTransforms().add(trans);
+            Node clip = getClip(s);
+            if(clip != null)
+                sh.setClip(clip);  
                     
-                Node mask = getMask(s);
-                if(mask != null)
-                    sh.setClip(mask);
+            Node mask = getMask(s);
+            if(mask != null)
+                sh.setClip(mask);
                
         }
           
@@ -1229,27 +1244,7 @@ public abstract class SVGParser {
         }
         	
 	protected String SVG;	
-	protected String[] keys = {"path",  "g", "svg",  "text", "tspan",  "image", "img", "clipPath",  "use", "polygon", "polyline", "rect", "line", "ellipse", "circle", "defs" }; //
-        private String[] aKeys = {"defs", "stop", "linearGradient", "radialGradient", "clipPath", "symbol"};
+	protected String[] keys = {"path",  "g", "svg",  "text", "tspan",  "image", "img", "use", "polygon", "polyline", "rect", "line", "ellipse", "circle" }; //
+    private String[] aKeys = {"defs", "stop", "linearGradient", "radialGradient", "clipPath", "symbol"};
        
-}
-
-class StyleBuilder implements Runnable {
-    
-    private SVGPath shape;
-    private String cascade;
-    private SVGParser svgparser;
-    
-    StyleBuilder(SVGPath sh, String attr, SVGParser parser){
-        shape = sh;
-        svgparser = parser;        
-        cascade = attr;       
-    }
-
-    @Override
-    public void run() {
-        svgparser.setPath(shape, cascade);
-    }
-   
-  
 }
