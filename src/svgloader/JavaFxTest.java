@@ -39,12 +39,14 @@ public class JavaFxTest extends Application {
 			
                        
                         if(pl.isEmpty())
-                            loader = new SVGLoader("C:/test/0132740648_1.svg");
+                            loader = new SVGLoader("C:/test/Agree/5.svg");
                         else
                             loader = new SVGLoader(pl.get(0));	
                         long start = System.currentTimeMillis();
                         Pane svgPane = loader.loadSVG();
-                        
+//                        svgPane.setScaleX(0.8);
+//                        svgPane.setScaleY(0.8);
+
 
                         pane.getChildren().addAll(svgPane);
                         svgPane.setCache(true);

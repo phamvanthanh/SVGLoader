@@ -1,5 +1,8 @@
 package svgloader;
 
+
+import java.awt.Dimension;
+import java.awt.Toolkit;
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -7,8 +10,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.Locale;
+import java.util.ResourceBundle;
 import java.util.zip.GZIPInputStream;
 import javafx.scene.Group;
 import javafx.scene.Node;
@@ -28,6 +31,7 @@ import javafx.scene.shape.StrokeLineJoin;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
+import javafx.scene.text.TextAlignment;
 import javafx.scene.text.TextFlow;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Transform;
@@ -42,34 +46,47 @@ public abstract class SVGParser {
 	*/
         long time = 0;
         long count = 0;
+        int rest;
+    
         
 	public SVGParser(String svgName) throws Exception {
-		
+	    
+            rest = Toolkit.getDefaultToolkit().getScreenResolution();
             byte[] buf = null;
-	    int length = 0;
+            
+//            Locale.getDefault();
+//	    bundle = ResourceBundle.getBundle("resources/StringBundle");
 		
 	    if(svgName.endsWith(".svg")) {
 	 	FileInputStream inFile = new FileInputStream(svgName);                
 		buf = new byte[inFile.available()];
-		length = inFile.read(buf);
+		inFile.read(buf);
+            
                 inFile.close();	
                 dir = svgName.replace(svgName.substring(svgName.lastIndexOf('/')+1), "");
-//                System.out.println(dir);
+
 	    }
-		
-		
+          
+          
+	    	
             long start = System.currentTimeMillis();
-            SVG = (new String(buf, 0, length))          
+            byte[] first = Arrays.copyOfRange(buf, 0, 100);
+            String encd = new String(first); 
+            encd = getString(encd, "encoding");            
+            SVG = new String(buf, encd);
+        
+            SVG = SVG          
                                 .replaceAll("[\\n]+"," ")
 //                                .replaceAll(" {2,}", " ")
                                 .replaceAll("\\<\\?xml.+\\?\\>"," ")
                                 .replaceAll("\\<\\?metadata.+\\?\\>"," ")
                                 .replaceAll("<!--[\\s\\S]*?-->", "")
                                 .replaceAll("<!DOCTYPE[^>]*>", "")
-                                .replaceAll("xmlns[^\\s]*\""," ")
+//                                .replaceAll("xmlns[^\\s]*\""," ")
                                 ;
                                                      
-//            SVG = removeWeirds(SVG);
+
+            
             
             long end = System.currentTimeMillis();
             System.out.println("Replace time: "+ (end-start));
@@ -128,6 +145,7 @@ public abstract class SVGParser {
         public void text(Text text, String s, String cas) { 
             String attr = getAttributeString(s, "text") + cas;
             text.setText(getContent(s));
+         
             setText(text, attr);     
                  
         }
@@ -267,43 +285,42 @@ public abstract class SVGParser {
 	*/
 	public String getString(String s, String key) {
                     
-		int length = key.length();
+	    int length = key.length();
             int index = s.indexOf(" "+key+"=\"");
-		if( index > -1) {
-            index = index + 3 + length;
-            return s.substring(index, s.indexOf("\"", index)).trim();
+	    if( index > -1) {
+                index = index + 3 + length;
+                return s.substring(index, s.indexOf("\"", index)).trim();
               
-		}
-                             
-		else if( s.indexOf(key+":") > -1) { //CASE OF CSS FORMAT
+	    }                             
+	    else if( s.indexOf(key+":") > -1) { //CASE OF CSS FORMAT
                
-			index = s.indexOf(key+":");		
-            if(index > 0 && s.charAt(index-1) != ';' && s.charAt(index-1) != ' ' && s.charAt(index-1) != '"')
+		index = s.indexOf(key+":");		
+                if(index > 0 && s.charAt(index-1) != ';' && s.charAt(index-1) != ' ' && s.charAt(index-1) != '"')
+                    return "";
+
+                index =index + 1 +length;
+                int c1 = s.indexOf(';', index);
+                int c2 = s.indexOf('"', index);
+                        
+                if((c1 > -1 && c1 < c2) || (c1 > -1 && c2 < 0))                            
+                     return s.substring(index, c1).trim();
+                else if(c2 > 0)
+                    return s.substring(index, c2).trim();
+			
                 return "";
 
-            index =index + 1 +length;
-            int c1 = s.indexOf(';', index);
-            int c2 = s.indexOf('"', index);
-                        
-            if((c1 > -1 && c1 < c2) || (c1 > -1 && c2 < 0))                            
-                return s.substring(index, c1).trim();
-            else if(c2 > 0)
-                return s.substring(index, c2).trim();
-			
-            return "";
-
-		}
+	    }
 		
-		else if(key == "text") {			
-			index = s.indexOf('>')+1;
-			return s.substring(index, s.indexOf('<', index)).trim();
-		}
-		else if(s.indexOf("<"+key+" ") > -1) {
-			index = s.indexOf("<"+key)+1 + length;
-			return s.substring(index, s.indexOf('/', index)).trim();
-		}
+	    else if(key == "text") {			
+		index = s.indexOf('>')+1;
+		return s.substring(index, s.indexOf('<', index)).trim();
+	    }
+	    else if(s.indexOf("<"+key+" ") > -1) {
+		index = s.indexOf("<"+key)+1 + length;
+		return s.substring(index, s.indexOf('/', index)).trim();
+	    }
 		
-		return "";	
+	    return "";	
 				
 	}
         
@@ -547,7 +564,7 @@ public abstract class SVGParser {
                 index = svgObject(S, "tspan", index);
               
                 if(S[1].length() == 0){ // Not more tspan
-                    String t = "<text>"+S[0].substring(last)+"\\s</text>"; // text all last text as text
+                    String t = "<text>"+S[0].substring(last)+"</text>"; // text all last text as text
                     list.add(t);                   
                     return list;
                 }
@@ -1059,13 +1076,12 @@ public abstract class SVGParser {
             double x = getValue(attr, "x");
             double y = getValue(attr, "y");
           
-            text.setLayoutX(x);
-            text.setLayoutY(y);
-                                            
-            double fs = getValue(attr, "font-size");     
-            if(!(fs > 0.0001))
-                    fs = 14; // Default font size
-            
+            text.setX(x);
+            text.setY(y);
+                               
+            double fs = getValue(attr, "font-size");
+//            fs = fs *87.0/rest; // rest = 96
+          
             String fwStr = getString(attr,"font-weight");
             FontWeight  fw = FontWeight.NORMAL;
             int len = fwStr.length();
@@ -1099,9 +1115,13 @@ public abstract class SVGParser {
                 }
               
             }
-           
-            text.setFont(Font.font(getString(attr, "font-family").replace("'", ""), fw, fs));          
-            setStyle(text, attr);    
+            Font font = Font.font(getString(attr, "font-family").replace("'", ""), fw, fs);
+             text.setFont(font);  
+//            System.out.println(font);
+//            System.out.println(text);
+//            System.out.println();
+             
+            setStyle(text, attr);
         }
         
         private void setTextFlow(TextFlow tf, String attr){
@@ -1260,9 +1280,10 @@ public abstract class SVGParser {
             
            return s;
                     
-        }
+    }
+    protected ResourceBundle bundle;     
     protected String dir;   	
-    protected String SVG;	
+    protected String SVG;
     protected String[] keys = {"path",  "g", "svg",  "text", "tspan",  "image", "img", "use", "polygon", "polyline", "rect", "line", "ellipse", "circle" }; //
     private String[] aKeys = {"defs", "stop", "linearGradient", "radialGradient", "clipPath", "symbol"};
        
