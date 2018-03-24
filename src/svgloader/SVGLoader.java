@@ -89,7 +89,7 @@ public class SVGLoader extends SVGParser {
                 Group group = new Group();
                 nList.add(group);
                 group.setLayoutX(x);
-			    group.setLayoutY(y);
+	        group.setLayoutY(y);
                                 group(group, xml, cas);
 //                executor.submit(new GroupBuilder(group, xml, cas, this));
                 List<String>  list = listObjects(cont, keys);  
@@ -112,7 +112,7 @@ public class SVGLoader extends SVGParser {
                                  
                     Group group = new Group(); 
                     nList.add(group);
-                  group(group, xml, cas);
+                    group(group, xml, cas);
 //                    executor.submit(new GroupBuilder(group, xml, cas, this));
                                         
                     List<String>  list = listObjects(cont, keys);
@@ -158,7 +158,7 @@ public class SVGLoader extends SVGParser {
                         
                 Group group = new Group(); 
                 nList.add(group);
-                        group(group, xml, cas);
+                group(group, xml, cas);
 //                executor.submit(new GroupBuilder(group, xml, cas, this));
                         
                 String attr = getAttributeString(xml, "g");
@@ -172,7 +172,8 @@ public class SVGLoader extends SVGParser {
             }
             else {
                 Text text = new Text();
-              text(text, xml, cas);
+
+                text(text, xml, cas);
 //                executor.submit(new TextBuilder(text, xml, cas, this));
                 nList.add(text);
                 return nList;    
@@ -281,24 +282,6 @@ class TextBuilder implements Runnable {
     }
 }
 
-class TextFlowBuilder implements Runnable {
-	
-    private String xml;
-    private String cascade;
-    private SVGLoader svgloader;
-    private TextFlow textflow;
-    
-    TextFlowBuilder(TextFlow tf, String s, String cas, SVGLoader loader){
-        xml = s;
-        cascade = cas;
-        svgloader = loader;
-        textflow = tf;
-    }
-    @Override
-    public void run() {
-        svgloader.textFlow(textflow, xml, cascade);         
-    }
-}
 class tspanBuilder implements Runnable {
 	
     private String xml;

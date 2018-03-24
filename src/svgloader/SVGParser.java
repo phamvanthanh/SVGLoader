@@ -46,24 +46,31 @@ public abstract class SVGParser {
 	*/
         long time = 0;
         long count = 0;
-        int rest;
+      
     
         
 	public SVGParser(String svgName) throws Exception {
 	    
-            rest = Toolkit.getDefaultToolkit().getScreenResolution();
+
             byte[] buf = null;
             
 //            Locale.getDefault();
 //	    bundle = ResourceBundle.getBundle("resources/StringBundle");
 		
 	    if(svgName.endsWith(".svg")) {
-	 	FileInputStream inFile = new FileInputStream(svgName);                
-		buf = new byte[inFile.available()];
-		inFile.read(buf);
-            
-                inFile.close();	
-                dir = svgName.replace(svgName.substring(svgName.lastIndexOf('/')+1), "");
+//                System.out.println(svgName);
+                try {
+                    FileInputStream inFile = new FileInputStream(svgName);                
+                    buf = new byte[inFile.available()];
+                    inFile.read(buf);
+
+                    inFile.close();	
+                    dir = svgName.replace(svgName.substring(svgName.lastIndexOf('/')+1), "");
+                }
+                catch (Exception ex){
+                    ex.printStackTrace();
+                }
+	 	
 
 	    }
           
@@ -72,10 +79,11 @@ public abstract class SVGParser {
             long start = System.currentTimeMillis();
             byte[] first = Arrays.copyOfRange(buf, 0, 100);
             String encd = new String(first); 
-            encd = getString(encd, "encoding");            
-            SVG = new String(buf, encd);
-        
-            SVG = SVG          
+            encd = getString(encd, "encoding");  
+            if(encd.isEmpty())
+                encd ="UTF-8";
+           
+            SVG = new String(buf, encd)         
                                 .replaceAll("[\\n]+"," ")
 //                                .replaceAll(" {2,}", " ")
                                 .replaceAll("\\<\\?xml.+\\?\\>"," ")
@@ -155,11 +163,7 @@ public abstract class SVGParser {
             text.setText(getContent(s));
             setText(text, attr);                       
         }
-        public void textFlow(TextFlow tf, String s, String cas){
-            String attr = getAttributeString(s, "text") + cas;
-            setTextFlow(tf, attr);  
-        }
-        
+               
         public void group(Group group, String xml, String cas){
             String attr = "";
             if(xml.charAt(1) == 'g')
@@ -214,17 +218,20 @@ public abstract class SVGParser {
 	@return double array with 6 elements (see JavaFX or SVG doc)
 	*/
 	public double[] doubleArray(String s) {
-            
-            return Arrays.stream(s.split("[\\s,]"))
+            if(s.indexOf("none") > -1 || s.isEmpty())
+                return null;
+
+            return Arrays.stream(s.split("[,\\s*]+"))
                              .mapToDouble(Tool::toDouble)
                              .toArray();
+
 	}
         
         protected Double[] _doubleArray(String s){
             if(s.indexOf("none") > -1 || s.isEmpty())
                 return null;
             
-            return Arrays.stream(s.split("[\\s,]"))
+            return Arrays.stream(s.split("[,\\s*]+"))
 				.map(Double::valueOf)
                 .toArray(Double[]::new);
         }
@@ -335,7 +342,7 @@ public abstract class SVGParser {
                 return sub;
             }
             return "";
-                     
+                    
            
         }
 	/**
@@ -648,7 +655,7 @@ public abstract class SVGParser {
             else {
              
                 String rep = attr.substring(cIndex, attr.indexOf('"', cIndex+7)+1);                
-                return attr + attr.replace(rep, getClass(rep.substring(7, rep.length()-1)));
+                return  attr.replace(rep, getClass(rep.substring(7, rep.length()-1)));
             }
 	}	
 	public FillRule getFillRule(String s) { // Get fill rule attribute
@@ -709,21 +716,22 @@ public abstract class SVGParser {
 	 */
 	public Transform getTransform(String s) {
 
-		String trans = getString(s, "transform");
+	    String trans = getString(s, "transform");
             
             if(trans.isEmpty())
                 return null;
-		    else {
+            else {
                       
-			    String arrStr =  trans.substring(trans.indexOf('(')+1, trans.indexOf(')')).trim();
+	        String arrStr =  trans.substring(trans.indexOf('(')+1, trans.indexOf(')')).trim();
+                
+              
                 if(arrStr.isEmpty())
                     return null;
-                else {
-
-                    double [] arr =  Arrays.stream(arrStr.split("[\\s,]")) 
-                                                   .mapToDouble(Tool::toDouble)
-                                                   .toArray();
-                            
+                else 
+                {
+                                          
+                    double [] arr = doubleArray(arrStr);                
+                 
                     int len = arr.length;
                     char fc = trans.charAt(0);
                     if(fc == 'r') { //rotate
@@ -1073,15 +1081,15 @@ public abstract class SVGParser {
 
         }
         private void setText(Text text, String attr){
+                    
             double x = getValue(attr, "x");
             double y = getValue(attr, "y");
-          
+            
             text.setX(x);
             text.setY(y);
                                
             double fs = getValue(attr, "font-size");
-//            fs = fs *87.0/rest; // rest = 96
-          
+         
             String fwStr = getString(attr,"font-weight");
             FontWeight  fw = FontWeight.NORMAL;
             int len = fwStr.length();
@@ -1116,27 +1124,11 @@ public abstract class SVGParser {
               
             }
             Font font = Font.font(getString(attr, "font-family").replace("'", ""), fw, fs);
-             text.setFont(font);  
-//            System.out.println(font);
-//            System.out.println(text);
-//            System.out.println();
-             
+            text.setFont(font); //             
             setStyle(text, attr);
         }
         
-        private void setTextFlow(TextFlow tf, String attr){
-            
-            double x = getValue(attr, "x");
-            tf.setLayoutX(x);
-            
-            double y = getValue(attr, "y");
-            tf.setLayoutY(y + 11); 
-                       
-            Transform trans = getTransform(attr);
-		if(trans != null)
-			tf.getTransforms().add(trans);	
-           
-        }
+     
         
         private void setStyle(Shape sh, String s){
                
@@ -1144,24 +1136,25 @@ public abstract class SVGParser {
             sh.setStroke(strk);
                  
             Paint fill = getColor(s, "fill");
-            if(fill == null)
-                sh.setFill(Color.BLACK);              
-            else                   
+            if(fill != null)                        
                 sh.setFill(fill);
-		    double sw = getValue(s, "stroke-width");
-		    if(!(sw > 0.0000001) )
-			    sw = 1;
-		    sh.setStrokeWidth(sw);
-		    sh.setOpacity(opacityValue(s, "opacity"));
+            
+            double sw = getValue(s, "stroke-width");
+	    if(!(sw > 0.0000001) )
+	        sw = 1;
+	    sh.setStrokeWidth(sw);
+	    sh.setOpacity(opacityValue(s, "opacity"));
 		
-		    String arr = getString(s, "stroke-dasharray");
-                Double[] dArr = _doubleArray(arr);
-		    if(dArr != null)
-			    sh.getStrokeDashArray().addAll(dArr);		
+	    String arr = getString(s, "stroke-dasharray");
+            Double[] dArr = _doubleArray(arr);
+	    if(dArr != null)
+	        sh.getStrokeDashArray().addAll(dArr);		
                 
-		    Transform trans = getTransform(s);
-		    if(trans != null)
-			    sh.getTransforms().add(trans);
+	    Transform trans = getTransform(s);
+	    if(trans != null)
+	         sh.getTransforms().add(trans);
+       
+            
             Node clip = getClip(s);
             if(clip != null)
                 sh.setClip(clip);  
