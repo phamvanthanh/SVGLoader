@@ -41,18 +41,19 @@ public class SVGColor {
     */
     public Color svgColor(String color, double value) {
 
+    	
     	try {
-                String cs = color.toLowerCase().trim();
+                color = color.toLowerCase().trim();
                 
-                if(cs.equals("none"))
-                    cs = "transparent";  
+                if(color.equals("none"))                  
+                   return Color.TRANSPARENT;
 
-                return Color.web(cs, value);			
+                return Color.web(color, value);			
             }
             catch (Exception e){} 
 
         
-    	return null;	
+    	return null;		
 		   	
     }
     private double opacity = 1.0;

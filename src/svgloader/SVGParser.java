@@ -1136,6 +1136,7 @@ public abstract class SVGParser {
             sh.setStroke(strk);
                  
             Paint fill = getColor(s, "fill");
+            
             if(fill != null)                        
                 sh.setFill(fill);
             
