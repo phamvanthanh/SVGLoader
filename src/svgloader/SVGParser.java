@@ -553,7 +553,6 @@ public abstract class SVGParser {
 					
 	}
      
-
 	return list;
     }
     /**

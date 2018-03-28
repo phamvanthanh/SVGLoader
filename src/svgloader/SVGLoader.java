@@ -87,8 +87,8 @@ public class SVGLoader extends SVGParser {
                 nList.add(group);
                 group.setLayoutX(x);
 	        group.setLayoutY(y);
-                                group(group, xml, cas);
-//                executor.submit(new GroupBuilder(group, xml, cas, this));
+//                                group(group, xml, cas);
+                executor.submit(new GroupBuilder(group, xml, cas, this));
                 List<String>  list = listObjects(cont, keys);  
 
                 attr = removeUncascadedttributes(attr) + cas;
@@ -109,8 +109,8 @@ public class SVGLoader extends SVGParser {
                                  
                     Group group = new Group(); 
                     nList.add(group);
-                    group(group, xml, cas);
-//                    executor.submit(new GroupBuilder(group, xml, cas, this));
+//                    group(group, xml, cas);
+                    executor.submit(new GroupBuilder(group, xml, cas, this));
                                         
                     List<String>  list = listObjects(cont, keys);
                     attr = removeUncascadedttributes(attr) + cas; 
@@ -133,8 +133,8 @@ public class SVGLoader extends SVGParser {
                        
             Group use = new Group(); 
             nList.add(use);
-                        use(use, xml, cas);
-//            executor.submit(new UseBuilder(use, xml, cas, this));
+//                        use(use, xml, cas);
+            executor.submit(new UseBuilder(use, xml, cas, this));
 
             String attr = getAttributeString(xml, "use")+cas;
                      
@@ -155,8 +155,8 @@ public class SVGLoader extends SVGParser {
                         
                 Group group = new Group(); 
                 nList.add(group);
-                group(group, xml, cas);
-//                executor.submit(new GroupBuilder(group, xml, cas, this));
+//                group(group, xml, cas);
+                executor.submit(new GroupBuilder(group, xml, cas, this));
                         
                 String attr = getAttributeString(xml, "g");
 
@@ -169,8 +169,8 @@ public class SVGLoader extends SVGParser {
             }
             else {
                 Text text = new Text();
-                text(text, xml, cas);
-//                executor.submit(new TextBuilder(text, xml, cas, this));
+//                text(text, xml, cas);
+                executor.submit(new TextBuilder(text, xml, cas, this));
                 nList.add(text);
                 return nList;    
             }
@@ -180,8 +180,8 @@ public class SVGLoader extends SVGParser {
                       
             Text text = new Text(); 
             nList.add(text);
-          text(text, xml, cas);
-//            executor.submit(new tspanBuilder(text, xml, cas, this));
+//          text(text, xml, cas);
+            executor.submit(new tspanBuilder(text, xml, cas, this));
                         
             return nList;   
         }
@@ -189,8 +189,8 @@ public class SVGLoader extends SVGParser {
                     
             ImageView img = new ImageView();
             nList.add(img);   
-          image(img, xml, cas);
-//            executor.submit(new ImageBuilder(img, xml, cas, this));
+//          image(img, xml, cas);
+            executor.submit(new ImageBuilder(img, xml, cas, this));
                                     
             return nList;
         }              
@@ -198,8 +198,8 @@ public class SVGLoader extends SVGParser {
                     
             SVGPath shape = new SVGPath();
             nList.add(shape);
-          shape(shape, xml, cas);
-//            executor.submit(new ShapeBuilder(shape, xml, cas, this));              
+//          shape(shape, xml, cas);
+            executor.submit(new ShapeBuilder(shape, xml, cas, this));              
                                 
             return nList;          
                      
