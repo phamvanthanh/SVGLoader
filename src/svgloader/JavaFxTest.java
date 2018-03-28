@@ -37,9 +37,9 @@ public class JavaFxTest extends Application {
 			primaryStage.setScene(scene);			
 			primaryStage.setTitle("Test SVGLoader Window");		
 			
-                       
+                        
                         if(pl.isEmpty())
-                            loader = new SVGLoader("C:/test/Arch/4.svg");
+                            loader = new SVGLoader("C:/test/Main/1.svg");
                         else
                             loader = new SVGLoader(pl.get(0));	
                         long start = System.currentTimeMillis();
@@ -56,8 +56,8 @@ public class JavaFxTest extends Application {
 			
                         System.out.println("Version: "+com.sun.javafx.runtime.VersionInfo.getRuntimeVersion());
 			System.out.println("Total time: "+(end-start)+ " mili secs");
-                  	System.out.println("Measure time: "+loader.time/1000000+ " mili secs");	
-                        System.out.println("Measure count: "+loader.count+ " times");
+                  	
+                       
                       
                         
 		} catch(Exception e) {		

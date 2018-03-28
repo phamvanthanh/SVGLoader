@@ -1,5 +1,5 @@
-javac -d target -sourcepath  src src/svgloader/JavaFxTest.java
+javac -d target  -cp libs/*;. -sourcepath  src src/svgloader/JavaFxTest.java
 
 cd target
 
-java svgloader.JavaFxTest 
+java -cp ../libs/*; svgloader.JavaFxTest 

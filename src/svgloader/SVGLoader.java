@@ -3,24 +3,21 @@ package svgloader;
 import java.util.ArrayList;
 import java.util.List;
 import java.awt.image.BufferedImage;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
 import javafx.scene.shape.SVGPath;
 import javafx.scene.text.Text;
-import javafx.scene.text.TextFlow;
-
 
 public class SVGLoader extends SVGParser {   
 	/**    Constructor    
 	 * @param svgName  String, svg document Name    
 	 * */   
-        
-        long listime = 0;
+
 	public SVGLoader(String svgName) throws Exception {        
 		super(svgName);
 		              	
@@ -31,47 +28,47 @@ public class SVGLoader extends SVGParser {
 	 * @param scaled double, scaling graphics between min.0.05 .... max. 5.0 (5x larger)    
 	 * */    
 	public SVGLoader(String svgName, double scaled) throws Exception {        
-		super(svgName);      
-		 
+	    super(svgName);	 
 	}    
 	
 	/**    svgTitle    
 	 * @return String the SVG title    
 	 * */    
 	public String svgTitle(){
-        String[] S = {SVG, ""};
-        svgObject(S, "title", 0);
-        return S[1];
+            String[] S = {SVG, ""};
+            svgObject(S, "title", 0);
+            return S[1];
 	}
 	
 	/**    loadSVG()    
 	 * @return Pane JavaFX Pane with SVG image    
 	 * */    
-	public Pane loadSVG(){              
+    public Pane loadSVG(){              
         pane.getChildren().addAll(createSVG(SVG, "")); 
         return pane;
-	}
+    }
 	
-	/**    bufferedSVGImage converts the SVG into JavaFX image    
-	 * @return BufferedImage of displaying SVG image    
-	 * */    
-	public BufferedImage bufferedSVGImage(){
+    /**    bufferedSVGImage converts the SVG into JavaFX image    
+    * @return BufferedImage of displaying SVG image    
+    * */    
+    public BufferedImage bufferedSVGImage(){
         return null;
-	}
+    }
 	
-	/**    save the converted SVG as PNG image    
-	 * @param name the name of png file (auto-ending with .png. Exp. 'test' becomes 'test.png'    
-	 * */    
-	public void saveSVGImage(String name){
+    /**    save the converted SVG as PNG image    
+    * @param name the name of png file (auto-ending with .png. Exp. 'test' becomes 'test.png'    
+    * */    
+    public void saveSVGImage(String name){
 		
-	}
+    }
 	
 	/* root  is the Pane where the converted SVG graphics are placed    
 	 * XML is the string content of SVG document (see SVGParser Constructor)    
 	 * idx is the current index (before submerging into next recursive level)    
 	 * */    
-//        private final ExecutorService executor = Executors.newFixedThreadPool(5*Runtime.getRuntime().availableProcessors());
+
     private final ExecutorService executor = Executors.newWorkStealingPool(5*Runtime.getRuntime().availableProcessors());
+    @Override
     public List<Node> createSVG(String xml, String cas) { 
         
         String key = findKey(xml, 0, keys); 
@@ -172,7 +169,6 @@ public class SVGLoader extends SVGParser {
             }
             else {
                 Text text = new Text();
-
                 text(text, xml, cas);
 //                executor.submit(new TextBuilder(text, xml, cas, this));
                 nList.add(text);
@@ -198,7 +194,7 @@ public class SVGLoader extends SVGParser {
                                     
             return nList;
         }              
-	    else if(!key.isEmpty()) {
+	else if(!key.isEmpty()) {
                     
             SVGPath shape = new SVGPath();
             nList.add(shape);
@@ -207,20 +203,20 @@ public class SVGLoader extends SVGParser {
                                 
             return nList;          
                      
-		}
-                
-		return nList;
 	}
+                
+	return nList;
+    }
         
     
         
     /**
-    * Search and parse string to Javafx objects
-    * @param s String parsing string	
-    * @param cas String svg object attribute to cascade style in nested structure
-    * @return Javafx Group group contains all parsed Javafx objects
+    * Build JavaFx objects a string list of SVG elements
+    * @param list String List of SVG elements	
+    * @param cas String svg object attribute to cascade style to elements in the list
+    * @return Javafx object list
     */
-      
+    @Override  
     public List<Node> buildObjectList(List<String> list, String cas){
        
         List<Node> oList = new ArrayList<Node>();              
@@ -234,9 +230,16 @@ public class SVGLoader extends SVGParser {
         return oList;
 
     }
-        
+    /**
+     * Shutdown threadPool which is used to buid svg shapes.
+     */    
     public void shutdown(){
-        executor.shutdown(); 
+        try {
+            while (executor.awaitTermination(1000, TimeUnit.MILLISECONDS)) ; // do nothing
+            executor.shutdownNow();
+        } catch (Exception ex) {
+                
+        }
     }
        
              
@@ -356,23 +359,4 @@ class UseBuilder implements Runnable {
     public void run() {
         svgloader.use(group, xml, cascade);         
     }
-}
-
-class SVGTask implements Callable<List<Node>>{
-	
-    private String xml;
-    private String cascade;
-    private SVGLoader loader;
-    SVGTask(String s, String cas,  SVGLoader svgloader) {
-        xml = s;
-        cascade = cas;
-        loader = svgloader;
-    }
-
-    @Override
-    public List<Node> call() throws Exception {
-       return loader.createSVG(xml, cascade);
-    }
-   
-    
 }
