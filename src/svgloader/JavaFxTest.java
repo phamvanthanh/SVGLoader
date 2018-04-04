@@ -37,19 +37,16 @@ public class JavaFxTest extends Application {
 			primaryStage.setScene(scene);			
 			primaryStage.setTitle("Test SVGLoader Window");		
 			
-                        
+                           long start = System.currentTimeMillis();
                         if(pl.isEmpty())
-                            loader = new SVGLoader("C:/test/20.svg");
+                            loader = new SVGLoader("C:/test/Main/1.svg");
                         else
                             loader = new SVGLoader(pl.get(0));	
-                        long start = System.currentTimeMillis();
-                        Pane svgPane = loader.loadSVG();
-//                        svgPane.setScaleX(0.8);
-//                        svgPane.setScaleY(0.8);
+                     
 
 
-                        pane.getChildren().addAll(svgPane);
-                        svgPane.setCache(true);
+                        pane.getChildren().addAll(loader.loadSVG());
+                        pane.setCache(true);
                         long end = System.currentTimeMillis();
                         primaryStage.show();
 //                        loader.close();

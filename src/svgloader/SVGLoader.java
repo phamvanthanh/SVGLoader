@@ -43,9 +43,13 @@ public class SVGLoader extends SVGParser {
 	/**    loadSVG()    
 	 * @return Pane JavaFX Pane with SVG image    
 	 * */    
-    public Pane loadSVG(){              
-        pane.getChildren().addAll(createSVG(SVG, "")); 
-        return pane;
+    public List<Node> loadSVG(){  
+        long s = System.currentTimeMillis();
+        List<Node> nodes = createSVG(SVG, "");      
+        long e = System.currentTimeMillis();
+        System.out.println("SVGLoader time: "+ (e-s));
+        return nodes;
+      
     }
 	
     /**    bufferedSVGImage converts the SVG into JavaFX image    

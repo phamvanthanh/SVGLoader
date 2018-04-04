@@ -1193,6 +1193,7 @@ public abstract class SVGParser {
             Node mask = getMask(s);
             if(mask != null)
                 sh.setClip(mask);
+      
                
         }
           
